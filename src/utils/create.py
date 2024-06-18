@@ -53,7 +53,7 @@ def parse_input(proj_dir, input):
     df = pd.DataFrame({
         "path": file_list,
         # to be refined
-        "fileHeader": [file_path.split("/")[-2] for file_path in file_list],
+        "fileHeader": [file_path.split("/")[-1].split(".")[0] for file_path in file_list],
         "completed": False,
         "CAT": False,
         "VirSorter2": False,

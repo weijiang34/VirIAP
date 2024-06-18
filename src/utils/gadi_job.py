@@ -85,32 +85,32 @@ class GadiJob():
                 'for file in ${file_list[@]};do',
                 '\techo "$file"',
                 '',
-                "\tfileHeader=$(echo $file | awk -F/ '{print $(NF-1)}')", # fileHeader
+                "\tfileHeader=$(echo $file | awk -F/ '{print $(NF)}' | cut -d '.' -f1)", # fileHeader
                 f'\tout_dir={out_dir}/$fileHeader/CAT_results',
+                '',
+                '\tif [ ! -d "$out_dir/" ]; then',
+                '\t\tmkdir -p $out_dir/',
+                '\tfi',
                 '',
                 '\tif [ -f "$out_dir/$fileHeader.nr.contig2classification.with_names.txt" ];then',
                 '\t\techo "$fileHeader CAT has already finished. Continue to the next one."',
                 '\t\tcontinue',
                 '\tfi',
                 '',
-                '\tif [ ! -d "$out_dir/" ]; then',
-                '\t\tmkdir $out_dir/',
-                '\tfi',
-                '',
-                f'    {envs.CAT_PACK_PATH}/CAT_pack contigs -c $file \\',
+                f'    {envs.CAT_PACK_PATH} contigs -c $file \\',
                 '                -d $CAT_dbPath/db \\',
                 '                -t $CAT_dbPath/tax \\',
                 '                -n $threads \\',
                 '                --force \\',
                 '                -o $out_dir/$fileHeader.nr',
                 '                ',
-                f'    {envs.CAT_PACK_PATH}/CAT_pack add_names -i $out_dir/$fileHeader.nr.contig2classification.txt \\',
+                f'    {envs.CAT_PACK_PATH} add_names -i $out_dir/$fileHeader.nr.contig2classification.txt \\',
                 '                  -o $out_dir/$fileHeader.nr.contig2classification.with_names.txt \\',
                 '                  -t $CAT_dbPath/tax \\',
                 '                  --force \\',
                 '                  --only_official ',
                 '                  ',
-                f'    {envs.CAT_PACK_PATH}/CAT_pack summarise -c $file \\',
+                f'    {envs.CAT_PACK_PATH} summarise -c $file \\',
                 '                  -i $out_dir/$fileHeader.nr.contig2classification.with_names.txt \\',
                 '                  -o $out_dir/$fileHeader.nr.summary.txt',
                 '',
@@ -119,6 +119,7 @@ class GadiJob():
                 'done'
             ],
             "VS2":[
+                f"source {envs.CONDA_PATH}/bin/activate vs2\n",
                 f'threads={self.job_configs.ncpus}',
                 '',
                 # 'source /g/data1b/oo46/wj6768/miniconda3/bin/activate /g/data1b/oo46/wj6768/miniconda3/envs/vs2',
@@ -128,20 +129,25 @@ class GadiJob():
                 ")",
                 'for file in ${file_list[@]};do',
                 '    echo "$file"',
-                "    fileHeader=$(echo $file | cut -d '/' -f 9)", # fileHeader
+                "    fileHeader=$(echo $file | awk -F/ '{print $(NF)}' | cut -d '.' -f1)", # fileHeader
                 f'    out_dir={out_dir}/$fileHeader/VirSorter2_results', 
+                '',
+                '\tif [ ! -d "$out_dir/" ]; then',
+                '\t\tmkdir -p $out_dir/',
+                '\tfi',
                 '',
                 '\tif [ -f "$out_dir/$fileHeader-final-viral-score.tsv" ];then',
                 '\t\techo "$fileHeader VirSorter2 has already finished. Continue to the next one."',
                 '\t\tcontinue',
                 '\tfi',
                 '',
-                '    virsorter run -w $out_dir -i $file -l $fileHeader --include-groups dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae -j $threads all --rm-tmpdir',
+                f'    {envs.VIRSORTER2_PATH} run -w $out_dir -i $file -l $fileHeader --include-groups \"dsDNAphage,NCLDV,RNA,ssDNA,lavidaviridae\" -j $threads --rm-tmpdir all',
                 '    echo VirSorter2 on "$file" finished!',
                 '    echo "############################################################"',
                 'done'
             ],
             "GNM":[
+                f"source {envs.CONDA_PATH}/bin/activate genomad\n",
                 f'threads={self.job_configs.ncpus}',
                 f'GeNomad_dbPath={envs.GENOMAD_DB_PATH}', # parameter:
                 '',
@@ -152,22 +158,27 @@ class GadiJob():
                 ")",
                 'for file in ${file_list[@]};do',
                 '    echo "$file"',
-                "    fileHeader=$(echo $file | awk -F/ '{print $(NF-1)}')", # fileHeader
+                "    fileHeader=$(echo $file | awk -F/ '{print $(NF)}' | cut -d '.' -f1)", # fileHeader
                 f'    out_dir={out_dir}/$fileHeader/GeNomad_results', 
                 '',
-                '\tif [ -f "$out_dir/final.contigs_summary/final.contigs_virus_summary.tsv" ];then',
-                '\t\tif [ -f "$out_dir/final.contigs_summary/final.contigs_plasmid_summary.tsv" ] ;then',
+                '\tif [ ! -d "$out_dir/" ]; then',
+                '\t\tmkdir -p $out_dir/',
+                '\tfi',
+                "\theader=$(echo $file | awk -F \'/\' \'{print $NF}\')",
+                '\tif [ -f "$out_dir/${header%.*}_summary/${header%.*}_virus_summary.tsv" ];then',
+                '\t\tif [ -f "$out_dir/${header%.*}_summary/${header%.*}_plasmid_summary.tsv" ] ;then',
                 '\t\t\techo "$fileHeader geNomad has already finished. Continue to the next one."',
                 '\t\t\tcontinue',
                 '\t\tfi',
                 '\tfi',
                 '',
-                '    genomad end-to-end $file $out_dir/ $GeNomad_dbPath --restart --threads $threads --cleanup',
+                f'    {envs.GENOMAD_PATH} end-to-end $file $out_dir/ $GeNomad_dbPath --restart --threads $threads --cleanup',
                 '    echo GeNomad on "$file" finished!',
                 '    echo "############################################################" ',
                 'done'
             ],
             "VLM":[
+                f"source {envs.CONDA_PATH}/bin/activate viralm\n",
                 'threads=32',
                 f'ViraLMPath={envs.VIRALM_PATH}',
                 '',
@@ -178,8 +189,12 @@ class GadiJob():
                 ")",
                 'for file in ${file_list[@]};do',
                 '    echo "$file"',
-                "    fileHeader=$(echo $file | awk -F/ '{print $(NF-1)}')", # fileHeader
+                "    fileHeader=$(echo $file | awk -F/ '{print $(NF)}' | cut -d '.' -f1)", # fileHeader
                 f'    out_dir={out_dir}/$fileHeader/ViraLM_results',
+                '',
+                '\tif [ ! -d "$out_dir/" ]; then',
+                '\t\tmkdir -p $out_dir/',
+                '\tfi',
                 '',
                 '\tif [ -f "$out_dir/result_final.csv" ];then',
                 '\t\techo "$fileHeader ViraLM has already finished. Continue to the next one."',
@@ -187,7 +202,7 @@ class GadiJob():
                 '\tfi',
                 '',
                 '    cd $ViraLMPath',
-                '    python viralm.py --input $file --output $out_dir/',
+                f'    python {envs.VIRALM_PATH} --input $file --output $out_dir/',
                 '    echo ViraLM on "$file" finished!',
                 '    echo "############################################################" ',
                 'done'
@@ -200,7 +215,7 @@ class GadiJob():
         elif commands_template!= None:
             if commands_template in list(commands_templates.keys()): self.command_lines = commands_templates[commands_template]
             else: raise ValueError(f"commands_template '{commands_template}' must be one of: {list(commands_templates.keys())}.")
-
+        
         # create lines of texts for pbs jobs
         self.job_texts = GadiJob.pbs_head + [
             f"# Job Name:",

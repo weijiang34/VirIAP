@@ -184,7 +184,7 @@ def merge_confirmed_contigs(prj_dir, fileHeader_list):
 
 def check_quality(prj_dir):
     bash_commands = [
-        f"checkv end_to_end {os.path.join(prj_dir,"OVU","merged_confirmed_contigs.fasta")} {os.path.join(prj_dir,"OVU","quality_check")} -d {envs.CHECKV_DB_PATH}\n",
+        f"checkv end_to_end {os.path.join(prj_dir,'OVU','merged_confirmed_contigs.fasta')} {os.path.join(prj_dir,'OVU','quality_check')} -d {envs.CHECKV_DB_PATH}\n",
     ]
     with open(os.path.join(prj_dir, "check_quality_tmp.sh"), 'w') as f:
         f.writelines("#!/bin/bash\n")
