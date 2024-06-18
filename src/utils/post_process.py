@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import envs
 
 def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
     # pre-run check
@@ -32,8 +33,8 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
     cat = cat.rename({"cat_contig":"seq_name", "cat_superkingdom":"cat_category"}, axis=1)
     cat = cat.loc[:,["seq_name","cat_category"]].reset_index(drop=True)
     
-    vs2["completeness"] = vs2["seqname"].str.split("\|\|", expand=True)[1]
-    vs2["seqname"] = vs2["seqname"].str.split("\|\|", expand=True)[0]
+    vs2["completeness"] = vs2["seqname"].str.split("||", expand=True)[1]
+    vs2["seqname"] = vs2["seqname"].str.split("||", expand=True)[0]
     vs2["category"] = "Viruses"
     vs2.columns = ["vs2_" + x for x in vs2.columns.values.tolist()]
     vs2 = vs2.rename({"vs2_seqname":"seq_name"}, axis=1)
@@ -166,11 +167,12 @@ def extract_confirmed_contigs_multi_files(prj_dir, fileHeader_list):
         extract_confirmed_contigs_single_file(prj_dir=prj_dir, fileHeader=fileHeader)
         
 def merge_confirmed_contigs(prj_dir, fileHeader_list):
-    with open(os.path.join(prj_dir,"merged_confirmed_contigs.fasta"), 'w') as merged_confirmed_contigs:
+    with open(os.path.join(prj_dir,"OVU","merged_confirmed_contigs.fasta"), 'w') as merged_confirmed_contigs:
         for fileHeader in fileHeader_list:
             if not os.path.exists(os.path.join(prj_dir, 'out', fileHeader, 'confirmed_contigs.fasta')):
                 print(f"{os.path.join(prj_dir, 'out', fileHeader, 'confirmed_contigs.fasta')} not exist. Exiting.")
                 return
+        for fileHeader in fileHeader_list:
             with open(os.path.join(prj_dir, 'out', fileHeader, 'confirmed_contigs.fasta'), 'r') as fasta:
                 sequence = []
                 for line in fasta:
@@ -179,6 +181,17 @@ def merge_confirmed_contigs(prj_dir, fileHeader_list):
                     else:
                         sequence.append(line)
                 merged_confirmed_contigs.writelines(sequence)
+
+def check_quality(prj_dir):
+    bash_commands = [
+        f"checkv end_to_end {os.path.join(prj_dir,"OVU","merged_confirmed_contigs.fasta")} {os.path.join(prj_dir,"OVU","quality_check")} -d {envs.CHECKV_DB_PATH}\n",
+    ]
+    with open(os.path.join(prj_dir, "check_quality_tmp.sh"), 'w') as f:
+        f.writelines("#!/bin/bash\n")
+        f.writelines(bash_commands)
+    os.system(f"chmod +x {os.path.join(prj_dir, 'check_quality_tmp.sh')}")
+    os.system(os.path.join(prj_dir, "check_quality_tmp.sh"))
+    os.remove(os.path.join(prj_dir, "check_quality_tmp.sh"))
 
 if __name__=="__main__":
     pass

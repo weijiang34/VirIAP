@@ -77,7 +77,7 @@ class GadiJob():
         commands_templates = {
             "CAT":[
                 f'threads={self.job_configs.ncpus}',
-                f'CAT_dbPath={envs.CAT_DB_PATH}', # parameter:
+                f'CAT_dbPath={envs.CAT_PACK_DB_PATH}', # parameter:
                 '',
                 "file_list=(",
                 "{}".format('\n'.join(f'"{item}"' for item in file_list)),
@@ -97,20 +97,20 @@ class GadiJob():
                 '\t\tmkdir $out_dir/',
                 '\tfi',
                 '',
-                f'    {envs.CAT_PATH}/CAT_pack contigs -c $file \\',
+                f'    {envs.CAT_PACK_PATH}/CAT_pack contigs -c $file \\',
                 '                -d $CAT_dbPath/db \\',
                 '                -t $CAT_dbPath/tax \\',
                 '                -n $threads \\',
                 '                --force \\',
                 '                -o $out_dir/$fileHeader.nr',
                 '                ',
-                f'    {envs.CAT_PATH}/CAT_pack add_names -i $out_dir/$fileHeader.nr.contig2classification.txt \\',
+                f'    {envs.CAT_PACK_PATH}/CAT_pack add_names -i $out_dir/$fileHeader.nr.contig2classification.txt \\',
                 '                  -o $out_dir/$fileHeader.nr.contig2classification.with_names.txt \\',
                 '                  -t $CAT_dbPath/tax \\',
                 '                  --force \\',
                 '                  --only_official ',
                 '                  ',
-                f'    {envs.CAT_PATH}/CAT_pack summarise -c $file \\',
+                f'    {envs.CAT_PACK_PATH}/CAT_pack summarise -c $file \\',
                 '                  -i $out_dir/$fileHeader.nr.contig2classification.with_names.txt \\',
                 '                  -o $out_dir/$fileHeader.nr.summary.txt',
                 '',

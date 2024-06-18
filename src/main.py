@@ -36,6 +36,8 @@ def main():
     subparser_filter = subparsers.add_parser("decontam", help="Decontamination: filter out rRNAs from bac,euk,arc,mito.")
     subparser_confirm = subparsers.add_parser("confirm", help="Output confirmed viral contigs.")
     subparser_merge = subparsers.add_parser("merge", help="Merge all confirmed viral contigs into one fasta file.")
+    
+    subparser_check_quality = subparsers.add_parser("check_quality", help="Use CheckV to check the quality of merged viral contigs.")
 
     args = parser.parse_args()
 
@@ -73,6 +75,8 @@ def main():
             post_process.extract_confirmed_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist())
     if args.modules=="merge":
         post_process.merge_confirmed_contigs(prj_dir=project_dir, fileHeader_list=os.listdir(os.path.join(project_dir, "out")))
+    if args.modules=="check_quality":
+        post_process.check_quality(prj_dir=project_dir)
 
 if __name__ == "__main__":
     main()
