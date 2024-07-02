@@ -1,9 +1,16 @@
 #!/bin/bash
 echo "INFO: Creating conda env: vip ..."
-conda create -n vip -c bioconda -c conda-forge seqkit checkv barrnap pandas
+conda create -n vip -c bioconda -c conda-forge seqkit checkv barrnap pandas ruamel.yaml strobealign samtools featureCounts
+
 WORKING_DIR=$(pwd)
 CONDA_ENVS_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //')
 CONDA_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //' | sed 's/\/envs$//')
+
+# download checkv database
+if [ ! -d $WORKING_DIR/dependencies/checkvdb ]; then
+    mkdir $WORKING_DIR/dependencies/checkvdb
+fi
+$CONDA_ENVS_PATH/vip/bin/checkv download_database $WORKING_DIR/dependencies/checkvdb/
 
 # CAT and its dependencies
 echo "INFO: [1/4] Installing CAT_pack ..."
@@ -121,39 +128,79 @@ else
     fi
 fi
 
+
 # tool path check and env variables settings
 if [ -f $WORKING_DIR/src/envs.py ];then
     rm $WORKING_DIR/src/envs.py
 fi
-if [ -f $WORKING_DIR/dependencies/CAT_pack/CAT_pack/CAT_pack ]; then    # CAT_pack
+if [ -d $CONDA_PATH ];then
+    echo "CONDA_PATH = \"$CONDA_PATH\"" > >> $WORKING_DIR/src/envs.py
+fi
+# CAT_pack
+if [ -f $WORKING_DIR/dependencies/CAT_pack/CAT_pack/CAT_pack ]; then
     echo -e "CAT_PACK_PATH = \"${WORKING_DIR}/dependencies/CAT_pack/CAT_pack/CAT_pack\"" >> $WORKING_DIR/src/envs.py
 else
     echo "CAT_PACK_PATH = " >> $WORKING_DIR/src/envs.py
 fi
-if [ -f $CONDA_ENVS_PATH/vs2/bin/virsorter ]; then    # Virsorter2
+# Virsorter2
+if [ -f $CONDA_ENVS_PATH/vs2/bin/virsorter ]; then
     echo -e "VIRSORTER2_PATH = \"${CONDA_ENVS_PATH}/vs2/bin/virsorter\"" >> $WORKING_DIR/src/envs.py
 else 
     echo "VIRSORTER2_PATH = " >> $WORKING_DIR/src/envs.py
 fi
-if [ -f $CONDA_ENVS_PATH/genomad/bin/genomad ]; then  # genomad
+# genomad
+if [ -f $CONDA_ENVS_PATH/genomad/bin/genomad ]; then
     echo -e "GENOMAD_PATH = \"${CONDA_ENVS_PATH}/genomad/bin/genomad\"" >> $WORKING_DIR/src/envs.py
 else 
     echo "GENOMAD_PATH = " >> $WORKING_DIR/src/envs.py
 fi
-if [ -f $WORKING_DIR/dependencies/ViraLM/viralm.py ]; then  # genomad
+# viralm
+if [ -f $WORKING_DIR/dependencies/ViraLM/viralm.py ]; then
     echo -e "VIRALM_PATH = \"${WORKING_DIR}/dependencies/ViraLM/viralm.py\"" >> $WORKING_DIR/src/envs.py
 else 
     echo "VIRALM_PATH = " >> $WORKING_DIR/src/envs.py
 fi
+# checkv
+if [ -f $CONDA_ENVS_PATH/vip/bin/checkv ]; then
+    echo -e "CHECKV_PATH = \"$CONDA_ENVS_PATH/vip/bin/checkv\"" >> $WORKING_DIR/src/envs.py
+else 
+    echo "CHECKV_PATH = " >> $WORKING_DIR/src/envs.py
+fi
+# strobealign
+if [ -f $CONDA_ENVS_PATH/vip/bin/strobealign ]; then
+    echo -e "STROBEALIGN_PATH = \"$CONDA_ENVS_PATH/vip/bin/strobealign\"" >> $WORKING_DIR/src/envs.py
+else 
+    echo "STROBEALIGN_PATH = " >> $WORKING_DIR/src/envs.py
+fi
+# samtools
+if [ -f $CONDA_ENVS_PATH/vip/bin/samtools ]; then
+    echo -e "SAMTOOLS_PATH = \"$CONDA_ENVS_PATH/vip/bin/samtools\"" >> $WORKING_DIR/src/envs.py
+else 
+    echo "SAMTOOLS_PATH = " >> $WORKING_DIR/src/envs.py
+fi
+# featureCounts
+if [ -f $CONDA_ENVS_PATH/vip/bin/featureCounts ]; then
+    echo -e "FEATURECOUNTS_PATH = \"$CONDA_ENVS_PATH/vip/bin/featureCounts\"" >> $WORKING_DIR/src/envs.py
+else 
+    echo "FEATURECOUNTS_PATH = " >> $WORKING_DIR/src/envs.py
+fi
 
 # db path check and env variables settings
-if [ -d $WORKING_DIR/dependencies/CAT_pack_nr_db ]; then    # CAT_pack_nr_db
+# CAT_pack_nr_db
+if [ -d $WORKING_DIR/dependencies/CAT_pack_nr_db ]; then
     echo -e "CAT_PACK_DB_PATH = \"${WORKING_DIR}/dependencies/CAT_pack_nr_db\"" >> $WORKING_DIR/src/envs.py
 else
     echo "CAT_PACK_DB_PATH = " >> $WORKING_DIR/src/envs.py
 fi
-if [ -d $WORKING_DIR/dependencies/genomad_db ]; then    # genomad_db
+# genomad_db
+if [ -d $WORKING_DIR/dependencies/genomad_db ]; then
     echo -e "GENOMAD_DB_PATH = \"${WORKING_DIR}/dependencies/genomad_db\"" >> $WORKING_DIR/src/envs.py
 else 
     echo "GENOMAD_DB_PATH = " >> $WORKING_DIR/src/envs.py
+fi
+# checkvdb
+if [ -d $WORKING_DIR/dependencies/checkvdb ] && compgen -d $WORKING_DIR/dependencies/checkvdb > /dev/null; then
+    echo -e "CEHCKV_DB_PATH = \"${$compgen -d $WORKING_DIR/dependencies/checkvdb}\"" >> $WORKING_DIR/src/envs.py
+else 
+    echo "CEHCKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
 fi

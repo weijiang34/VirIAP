@@ -1,4 +1,4 @@
 *.ipynb_checkpoints/
 *__pycache__*
-dependencies/*
+dependencies/
 src/envs.py

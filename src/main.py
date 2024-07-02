@@ -1,6 +1,6 @@
 import os
 import argparse
-from utils import create, config, gadi_job, check_completeness, post_process
+from utils import create, config, gadi_job, check_completeness, post_process, mapping
 import pandas as pd
 
 def main():
@@ -36,8 +36,16 @@ def main():
     subparser_filter = subparsers.add_parser("decontam", help="Decontamination: filter out rRNAs from bac,euk,arc,mito.")
     subparser_confirm = subparsers.add_parser("confirm", help="Output confirmed viral contigs.")
     subparser_merge = subparsers.add_parser("merge", help="Merge all confirmed viral contigs into one fasta file.")
+    subparser_dedup = subparsers.add_parser("dedup", help="Remove exactly the same contigs.")
+    subparser_quality_check = subparsers.add_parser("check_quality", help="Use CheckV to check the quality of merged viral contigs.")
+    subparser_cluster = subparsers.add_parser("cluster", help="Use ANI and AF results from blast all against all to cluster viral contigs.")
     
-    subparser_check_quality = subparsers.add_parser("check_quality", help="Use CheckV to check the quality of merged viral contigs.")
+    subparser_mapping = subparsers.add_parser("mapping", help="Map clean paired-end reads to representative contigs using strobealign, and calculate relative abundance.")
+    subparser_mapping.add_argument("--manifest", type=str, help="a three column csv file, with columns: fileHeader,fq1,fq2")
+    mapping_option = subparser_mapping.add_mutually_exclusive_group(required=True)
+    mapping_option.add_argument("--indexing", action="store_true", help="Generate jobs for building strobealign index with representative viral contigs.")
+    mapping_option.add_argument("--mapping", action="store_true", help="Generate jobs for mapping batches of samples to the representatives.")
+    mapping_option.add_argument("--count_matrix", action="store_true", help="Count number of reads and calculate FPKM and TPM.")
 
     args = parser.parse_args()
 
@@ -65,18 +73,33 @@ def main():
 
     if args.modules=="check":
         check_completeness.check_complete_multifile(prj_dir=project_dir)
-    if args.modules in ["extract","decontam","confirm","merge"]:
+    if args.modules in ["extract","decontam","confirm"]:
         fileHeader_list = pd.read_csv(os.path.join(project_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
         if args.modules=="extract":
             post_process.extract_putative_contigs_multi_samples(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist(), min_len=args.min_length)
         if args.modules=="decontam":
-            post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist(), threads=64)
+            proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+            post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist(), threads=proj_config["gadi"]["-l ncpus"])
         if args.modules=="confirm":
-            post_process.extract_confirmed_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist())
+            post_process.extract_decontaminated_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist())
     if args.modules=="merge":
         post_process.merge_confirmed_contigs(prj_dir=project_dir, fileHeader_list=os.listdir(os.path.join(project_dir, "out")))
+    if args.modules=="dedup":
+        post_process.dedup(prj_dir=project_dir)
     if args.modules=="check_quality":
         post_process.check_quality(prj_dir=project_dir)
+    if args.modules=="cluster":
+        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        post_process.cluster(prj_dir=project_dir, threads=proj_config["gadi"]["-l ncpus"])
+    if args.modules=="mapping":
+        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        if args.indexing==True:
+            mapping.indexing(prj_dir=project_dir, threads=proj_config["gadi"]["-l ncpus"])
+        if args.mapping==True:
+            mapping.mapping(prj_dir=project_dir, manifest=args.manifest, threads=proj_config["gadi"]["-l ncpus"])
+        if args.count_matrix==True:
+            mapping.count_matrix(prj_dir=project_dir, manifest=args.manifest)
+    
 
 if __name__ == "__main__":
     main()

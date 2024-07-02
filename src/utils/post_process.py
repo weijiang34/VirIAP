@@ -99,7 +99,7 @@ def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=300
     for fileHeader in fileHeader_list:
         extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, min_len=min_len)
     
-def find_rRNAs_single_file(prj_dir, fileHeader, threads=64):
+def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
     
     # pre-run check
     files_to_check = [
@@ -127,11 +127,11 @@ def find_rRNAs_single_file(prj_dir, fileHeader, threads=64):
     if os.path.exists(f"{os.path.join(prj_dir, 'out', fileHeader, 'putative_contigs.fasta')}.fai"):
         os.remove(f"{os.path.join(prj_dir, 'out', fileHeader, 'putative_contigs.fasta.fai')}")
 
-def find_rRNAs_multi_files(prj_dir, fileHeader_list, threads=64):
+def find_rRNAs_multi_files(prj_dir, fileHeader_list, threads=32):
     for fileHeader in fileHeader_list:
         find_rRNAs_single_file(prj_dir=prj_dir, fileHeader=fileHeader, threads=threads)
     
-def extract_confirmed_contigs_single_file(prj_dir, fileHeader):
+def extract_decontaminated_contigs_single_file(prj_dir, fileHeader):
     
     # pre-run check
     files_to_check = [
@@ -149,31 +149,31 @@ def extract_confirmed_contigs_single_file(prj_dir, fileHeader):
     
     confirmed_summary = putative_summary.copy()
     confirmed_summary = confirmed_summary[~confirmed_summary["seq_name"].isin(rRNAs_summary["seq_name"])]
-    confirmed_summary.to_csv(os.path.join(prj_dir, 'out', fileHeader, 'confirmed_summary.csv'), sep=',', index=None)
+    confirmed_summary.to_csv(os.path.join(prj_dir, 'out', fileHeader, 'decontaminated_summary.csv'), sep=',', index=None)
 
     # extract confirmed fasta
     bash_commands = [
-        f"seqkit grep -f <(sed '1d' {os.path.join(prj_dir, 'out', fileHeader, 'confirmed_summary.csv')} | cut -f1 -d',') {completeness_status[completeness_status['fileHeader']==fileHeader].iloc[0]['path']} > {os.path.join(prj_dir, 'out', fileHeader, 'confirmed_contigs.fasta')}\n"
+        f"seqkit grep -f <(sed '1d' {os.path.join(prj_dir, 'out', fileHeader, 'decontaminated_summary.csv')} | cut -f1 -d',') {completeness_status[completeness_status['fileHeader']==fileHeader].iloc[0]['path']} > {os.path.join(prj_dir, 'out', fileHeader, 'decontaminated_contigs.fasta')}\n"
     ]
-    with open(os.path.join(prj_dir, "extract_confirmed_contigs_tmp.sh"), 'w') as f:
+    with open(os.path.join(prj_dir, "extract_decontaminated_contigs_tmp.sh"), 'w') as f:
         f.writelines("#!/bin/bash\n")
         f.writelines(bash_commands)
-    os.system(f"chmod +x {os.path.join(prj_dir, 'extract_confirmed_contigs_tmp.sh')}")
-    os.system(os.path.join(prj_dir, "extract_confirmed_contigs_tmp.sh"))
-    os.remove(os.path.join(prj_dir, "extract_confirmed_contigs_tmp.sh"))
+    os.system(f"chmod +x {os.path.join(prj_dir, 'extract_decontaminated_contigs_tmp.sh')}")
+    os.system(os.path.join(prj_dir, "extract_decontaminated_contigs_tmp.sh"))
+    os.remove(os.path.join(prj_dir, "extract_decontaminated_contigs_tmp.sh"))
     
-def extract_confirmed_contigs_multi_files(prj_dir, fileHeader_list):
+def extract_decontaminated_contigs_multi_files(prj_dir, fileHeader_list):
     for fileHeader in fileHeader_list:
-        extract_confirmed_contigs_single_file(prj_dir=prj_dir, fileHeader=fileHeader)
+        extract_decontaminated_contigs_single_file(prj_dir=prj_dir, fileHeader=fileHeader)
         
 def merge_confirmed_contigs(prj_dir, fileHeader_list):
-    with open(os.path.join(prj_dir,"OVU","merged_confirmed_contigs.fasta"), 'w') as merged_confirmed_contigs:
+    with open(os.path.join(prj_dir,"OVU","merged_decontaminated_contigs.fasta"), 'w') as merged_confirmed_contigs:
         for fileHeader in fileHeader_list:
-            if not os.path.exists(os.path.join(prj_dir, 'out', fileHeader, 'confirmed_contigs.fasta')):
-                print(f"{os.path.join(prj_dir, 'out', fileHeader, 'confirmed_contigs.fasta')} not exist. Exiting.")
+            if not os.path.exists(os.path.join(prj_dir, 'out', fileHeader, 'decontaminated_contigs.fasta')):
+                print(f"{os.path.join(prj_dir, 'out', fileHeader, 'decontaminated_contigs.fasta')} not exist. Exiting.")
                 return
         for fileHeader in fileHeader_list:
-            with open(os.path.join(prj_dir, 'out', fileHeader, 'confirmed_contigs.fasta'), 'r') as fasta:
+            with open(os.path.join(prj_dir, 'out', fileHeader, 'decontaminated_contigs.fasta'), 'r') as fasta:
                 sequence = []
                 for line in fasta:
                     if line.startswith('>'):
@@ -182,9 +182,30 @@ def merge_confirmed_contigs(prj_dir, fileHeader_list):
                         sequence.append(line)
                 merged_confirmed_contigs.writelines(sequence)
 
-def check_quality(prj_dir):
+def dedup(prj_dir):
+    merged_fasta = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs.fasta")
+    dedup_details = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup_detail.txt")
+    dup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dup.fasta")
+    dedup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta")
     bash_commands = [
-        f"checkv end_to_end {os.path.join(prj_dir,'OVU','merged_confirmed_contigs.fasta')} {os.path.join(prj_dir,'OVU','quality_check')} -d {envs.CHECKV_DB_PATH}\n",
+        f"source {envs.CONDA_PATH}/bin/activate vip\n",
+        f"cat {merged_fasta} | seqkit rmdup -s -D {dedup_details} -d {dup} -o {dedup}\n",
+    ]
+    with open(os.path.join(prj_dir, "dedup_tmp.sh"), 'w') as f:
+        f.writelines("#!/bin/bash\n")
+        f.writelines(bash_commands)
+    os.system(f"chmod +x {os.path.join(prj_dir, 'dedup_tmp.sh')}")
+    os.system(os.path.join(prj_dir, "dedup_tmp.sh"))
+    os.remove(os.path.join(prj_dir, "dedup_tmp.sh"))
+
+def check_quality(prj_dir, threads):
+    dedup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta")
+    quality_check_dir = os.path.join(prj_dir,'OVU','quality_check')
+    quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
+    bash_commands = [
+        f"source {envs.CONDA_PATH}/bin/activate vip\n",
+        f"checkv end_to_end {dedup} {quality_check_dir} -d {envs.CHECKV_DB_PATH} -t {threads}\n",
+        f"seqkit grep -f <(awk -F \'\t\' \'{{if ($6 == 0 && $8 == \"Not-determined\") {{next;}} print $1}}\' {quality_check_dir}/quality_summary.tsv | sed \'1d\') {dedup} > {quality_filtered_fasta}\n",
     ]
     with open(os.path.join(prj_dir, "check_quality_tmp.sh"), 'w') as f:
         f.writelines("#!/bin/bash\n")
@@ -192,6 +213,53 @@ def check_quality(prj_dir):
     os.system(f"chmod +x {os.path.join(prj_dir, 'check_quality_tmp.sh')}")
     os.system(os.path.join(prj_dir, "check_quality_tmp.sh"))
     os.remove(os.path.join(prj_dir, "check_quality_tmp.sh"))
+
+def cluster(prj_dir, threads):
+    job = os.path.join(prj_dir,"OVU","blast_cluster_filtered.pbs")
+    log = ""
+
+    gadi_headers = [
+        "#!/bin/bash",
+        "# Job Name:",
+        "#PBS -N blast_cluster",
+        "# Project Info:",
+        "#PBS -P mp96",
+        "#PBS -l storage=gdata/oo46+gdata/mp96",
+        "# Log Output:",
+        f"#PBS -o {log}/blast_cluster.o",
+        f"#PBS -e {log}/blast_cluster.e",
+        "#PBS -j oe",
+        "# Mailing:",
+        "#PBS -m abe",
+        "#PBS -M 379004663@qq.com",
+        "# Resources Allocation:",
+        "#PBS -q normalsl",
+        "#PBS -l walltime=10:00:00",
+        "#PBS -l mem=64GB",
+        f"#PBS -l ncpus={threads}",
+        "#PBS -l jobfs=2GB",
+    ]
+    bash_commands = [
+        f"source {envs.CONDA_PATH}/bin/activate vip",
+        f"echo \"make blast db ...\"",
+        f"makeblastdb -in {prj_dir}/OVU/quality_filtered_contigs.fasta -out {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -dbtype nucl",
+        f"echo \"blasting ...\"",
+        f"blastn -query {prj_dir}/OVU/quality_filtered_contigs.fasta -db {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -out {prj_dir}/OVU/filtered_blast.tsv -outfmt '6 std qlen slen' -max_target_seqs 25000 -perc_identity 90",
+        f"echo \"blast finished\"",
+        f"python blastani.py -i {prj_dir}/OVU/filtered_blast.tsv -o {prj_dir}/OVU/filtered_ani.tsv",
+        f"echo \"compute ANI finished\"",
+        f"python cluster.py --fna {prj_dir}/OVU/quality_filtered_contigs.fasta --ani {prj_dir}/OVU/filtered_ani.tsv --out {prj_dir}/OVU/filtered_clusters.tsv --min_ani 95 --min_qcov 0 --min_tcov 85",
+        f"echo \"cluster finished\"",
+        f"echo \"extract representatives ...\"",
+        f"seqkit grep -f <(cat {prj_dir}/OVU/OVUs_info.csv | cut -d ',' -f2 | sed '1d') {prj_dir}/OVU/quality_filtered_contigs.fasta > {prj_dir}/OVU/rep_contigs.fasta",
+        f"echo \"finished\"",
+    ]
+    script_lines = gadi_headers + bash_commands
+    script_lines = [x+'\n' for x in script_lines]
+    with open(job, 'w') as f:
+        f.writelines(script_lines)
+    
+    return
 
 if __name__=="__main__":
     pass
