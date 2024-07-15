@@ -47,7 +47,7 @@ class GadiJob():
             "geNomad_10":GadiJobConfig(job_name=f"GNM_{index_s}_{index_e}", walltime="48:00:00", mem="192GB", ncpus="32", ngpus="0", 
                                         node_type="normalsl", jobfs="2GB", project=config["gadi"]["-P project"], storage=config["gadi"]["-l storage"], 
                                         log_dir=os.path.join(prj_dir,"logs"), mail_addr=config["gadi"]["-M mail_addr"]),
-            "ViraLM_10_GPU":GadiJobConfig(job_name=f"VLM_{index_s}_{index_e}", walltime="12:00:00", mem="64GB", ncpus="32", ngpus="2", 
+            "ViraLM_10_GPU":GadiJobConfig(job_name=f"VLM_{index_s}_{index_e}", walltime="12:00:00", mem="64GB", ncpus="16", ngpus="1", 
                                         node_type="dgxa100", jobfs="2GB", project=config["gadi"]["-P project"], storage=config["gadi"]["-l storage"], 
                                         log_dir=os.path.join(prj_dir,"logs"), mail_addr=config["gadi"]["-M mail_addr"]),
         }
@@ -180,7 +180,7 @@ class GadiJob():
             "VLM":[
                 f"source {envs.CONDA_PATH}/bin/activate viralm\n",
                 'threads=32',
-                f'ViraLMPath={envs.VIRALM_PATH}',
+                f'ViraLMPath={os.path.dirname(envs.VIRALM_PATH)}',
                 '',
                 # 'source /g/data1b/oo46/wj6768/miniconda3/bin/activate /g/data1b/oo46/wj6768/miniconda3/envs/viralm',
                 ' ',
@@ -199,6 +199,9 @@ class GadiJob():
                 '\tif [ -f "$out_dir/result_final.csv" ];then',
                 '\t\techo "$fileHeader ViraLM has already finished. Continue to the next one."',
                 '\t\tcontinue',
+                '\telse',
+                '\t\trm -r $out_dir',
+                '\t\techo "$fileHeader ViraLM rerunning."',
                 '\tfi',
                 '',
                 '    cd $ViraLMPath',

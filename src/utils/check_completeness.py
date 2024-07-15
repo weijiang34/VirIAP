@@ -17,7 +17,7 @@ def check_complete_singlefile(series, prj_dir: str="."):
     if os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"GeNomad_results",f"{'.'.join(s['path'].split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(s['path'].split('/')[-1].split('.')[:-1])}_virus_summary.tsv")) and os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"GeNomad_results",f"{'.'.join(s['path'].split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(s['path'].split('/')[-1].split('.')[:-1])}_plasmid_summary.tsv")):
         s["GeNomad"] = True
     # Verification of ViraLM: "./out/{}/ViraLM_results/result_final.csv"
-    if os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"ViraLM_results","result_final.csv")): 
+    if os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"ViraLM_results",f"result_{s['fileHeader']}.csv")): 
         s["ViraLM"] = True
     # check putative
     if os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"putative_contigs.fasta")): 

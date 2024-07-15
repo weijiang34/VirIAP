@@ -7,12 +7,14 @@ Download this directory:
 ```
 git clone https://github.com/weijiang34/RTTAP.git
 ```
-Install by running setup.sh:
+Install necessary tools and databases by running: 
 ```
 cd RTTAP/
-bash setup.sh
+bash setup.sh --tools
+bash setup.sh --databases
 ```
-***NOTE:***  
+
+<!-- ***NOTE:***  
 The installation requires the following steps, if the installation failed, you may aslo follow these steps.  
 Prerequisites:  
 1. Install CAT from: https://github.com/MGXlab/CAT_pack
@@ -35,7 +37,7 @@ tar -xvzf 20240422_CAT_nr.tar.gz
 cd ../..
 # checkv DB:
 checkv download_database ./dependencies/checkvdb
-```
+``` -->
 
 
 ## Usage:  
