@@ -6,7 +6,7 @@ CONDA_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //'
 
 install_tools() {
     echo "INFO: Creating conda env: viriap ..."
-    conda create -n viriap -c bioconda -c conda-forge -f $WORKING_DIR/environment.yml
+    conda env create -c bioconda -c conda-forge -f $WORKING_DIR/environment.yml
     mkdir -p $WORKING_DIR/dependencies
     # CAT
     echo "INFO: [1/4] Installing CAT_pack ..."
