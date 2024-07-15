@@ -1,16 +1,16 @@
-# viruses-identification-pipeline
+# Virome-Identification-and-Analysis-Pipeline (VirIAP)
 
 Welcome to use this pipeline!  
 
 ## Installiaton  
 Download this directory:
 ```
-git clone https://github.com/weijiang34/VIP.git
+git clone https://github.com/weijiang34/VirIAP.git
 
 ```
 Install necessary tools and databases by running: 
 ```
-cd VIP/
+cd VirIAP/
 bash setup.sh --tools
 bash setup.sh --databases
 ```

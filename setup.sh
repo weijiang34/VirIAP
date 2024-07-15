@@ -6,7 +6,8 @@ CONDA_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //'
 
 install_tools() {
     echo "INFO: Creating conda env: vip ..."
-    conda create -n vip -c bioconda -c conda-forge seqkit checkv barrnap pandas ruamel.yaml strobealign samtools subread
+    conda create -n vip -c bioconda -c conda-forge seqkit checkv barrnap pandas ruamel.yaml strobealign samtools subread --yes
+    mkdir -p $WORKING_DIR/dependencies
     # CAT
     echo "INFO: [1/4] Installing CAT_pack ..."
     if [ -d $WORKING_DIR/dependencies/CAT_pack ]; then
@@ -49,7 +50,7 @@ install_tools() {
         git clone https://github.com/ChengPENG-wolf/ViraLM.git
         cd $WORKING_DIR/dependencies/ViraLM
         # create viralm environment
-        conda env create -f viralm.yaml -n viralm --yes
+        conda env create -f viralm.yaml -n viralm
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: 'viralm' created."
         fi
