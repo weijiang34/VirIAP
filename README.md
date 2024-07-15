@@ -10,7 +10,7 @@ git clone https://github.com/weijiang34/VIP.git
 ```
 Install necessary tools and databases by running: 
 ```
-cd RTTAP/
+cd VIP/
 bash setup.sh --tools
 bash setup.sh --databases
 ```
