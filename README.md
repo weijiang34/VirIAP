@@ -5,7 +5,8 @@ Welcome to use this pipeline!
 ## Installiaton  
 Download this directory:
 ```
-git clone https://github.com/weijiang34/RTTAP.git
+git clone https://github.com/weijiang34/VIP.git
+
 ```
 Install necessary tools and databases by running: 
 ```
