@@ -6,7 +6,7 @@ CONDA_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //'
 
 install_tools() {
     echo "INFO: Creating conda env: vip ..."
-    conda create -n vip -c bioconda -c conda-forge seqkit checkv barrnap pandas ruamel.yaml strobealign samtools featureCounts
+    conda create -n vip -c bioconda -c conda-forge seqkit checkv barrnap pandas ruamel.yaml strobealign samtools subread
     # CAT
     echo "INFO: [1/4] Installing CAT_pack ..."
     if [ -d $WORKING_DIR/dependencies/CAT_pack ]; then
