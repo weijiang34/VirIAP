@@ -6,13 +6,19 @@ CONDA_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //'
 MAIN_ENV_NAME="viriap"
 
 install_tools() {
-    echo "INFO: Creating conda env: $MAIN_ENV_NAME ..."
-    conda create -n $MAIN_ENV_NAME pandas ruamel.yaml strobealign samtools --yes
-
-    source $CONDA_PATH/bin/activate $MAIN_ENV_NAME
-    conda activate $MAIN_ENV_NAME
     
-    conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv --yes
+    if conda info --envs | grep -q -w "$MAIN_ENV_NAME"; then
+        echo -e "\tEnv: '$MAIN_ENV_NAME' already exists."
+    else
+        echo "INFO: Creating conda env: $MAIN_ENV_NAME ..."
+        conda create -n $MAIN_ENV_NAME pandas ruamel.yaml strobealign samtools --yes
+        source $CONDA_PATH/bin/activate $MAIN_ENV_NAME
+        conda activate $MAIN_ENV_NAME
+        conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv --yes
+        if [ $? -eq 0 ]; then
+            echo -e "\tEnv: '$MAIN_ENV_NAME' created."
+        fi
+    fi
     # conda env create -n viriap -f environment.yml
     mkdir -p $WORKING_DIR/dependencies
     # CAT
@@ -30,6 +36,7 @@ install_tools() {
         echo -e "\tEnv: 'vs2' not existed, creating..."
         # create vs2 environment
         conda create -n vs2 -c conda-forge -c bioconda virsorter=2 --yes
+        # conda create -n vs2 bioconda::virsorter --yes
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: 'vs2' created."
         fi
