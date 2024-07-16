@@ -8,23 +8,24 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
     files_to_check = [
         os.path.join(prj_dir,"out",f"{fileHeader}","CAT_results", f"{fileHeader}.nr.contig2classification.with_names.txt"),
         os.path.join(prj_dir,"out",f"{fileHeader}","VirSorter2_results", f"{fileHeader}-final-viral-score.tsv"),
-        os.path.join(prj_dir,"out",f"{fileHeader}", "GeNomad_results", "final.contigs_summary", "final.contigs_virus_summary.tsv"),
-        os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results","final.contigs_summary", "final.contigs_plasmid_summary.tsv"),
-        os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results","result_final.csv")
+        os.path.join(prj_dir,"out",f"{fileHeader}", "GeNomad_results", f"{fileHeader}.contigs_summary", f"{fileHeader}.contigs_virus_summary.tsv"),
+        os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{fileHeader}.contigs_summary", f"{fileHeader}.contigs_plasmid_summary.tsv"),
+        os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results",f"result_{fileHeader}.csv")
     ]
     for file in files_to_check:
         if not os.path.exists(file):
+            print(f'{file} does not exist.')
             return
     
     cat = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","CAT_results",
                                      f"{fileHeader}.nr.contig2classification.with_names.txt"), sep='\t', header=0).rename({"# contig":"contig"},axis=1)
     vs2 = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","VirSorter2_results",
                                      f"{fileHeader}-final-viral-score.tsv"), sep='\t', header=0)
-    gnm_v = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results","final.contigs_summary",
-                                     "final.contigs_virus_summary.tsv"), sep='\t', header=0)
-    gnm_p = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results","final.contigs_summary",
-                                     "final.contigs_plasmid_summary.tsv"), sep='\t', header=0)
-    vlm = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results","result_final.csv"), sep=',', header=0)
+    gnm_v = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{fileHeader}.contigs_summary",
+                                     f"{fileHeader}.contigs_virus_summary.tsv"), sep='\t', header=0)
+    gnm_p = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{fileHeader}.contigs_summary",
+                                     f"{fileHeader}.contigs_plasmid_summary.tsv"), sep='\t', header=0)
+    vlm = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results",f"result_{fileHeader}.csv"), sep=',', header=0)
     completeness_status = pd.read_csv(os.path.join(prj_dir, "completeness_status.csv"), sep=',', header=0, index_col=None)
     
     # processing vs2 and gnm reports; adding names
@@ -33,13 +34,22 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
     cat = cat.rename({"cat_contig":"seq_name", "cat_superkingdom":"cat_category"}, axis=1)
     cat = cat.loc[:,["seq_name","cat_category"]].reset_index(drop=True)
     
-    vs2["completeness"] = vs2["seqname"].str.split("||", expand=True)[1]
-    vs2["seqname"] = vs2["seqname"].str.split("||", expand=True)[0]
-    vs2["category"] = "Viruses"
-    vs2.columns = ["vs2_" + x for x in vs2.columns.values.tolist()]
-    vs2 = vs2.rename({"vs2_seqname":"seq_name"}, axis=1)
-    vs2 = vs2[vs2["vs2_max_score_group"]!="RNA"]
-    vs2 = vs2.loc[:, ["seq_name", "vs2_category"]].reset_index(drop=True)
+    if vs2.shape[0]>0:
+        vs2["completeness"] = vs2["seqname"].str.split("||", expand=True)[1]
+        vs2["seqname"] = vs2["seqname"].str.split("||", expand=True)[0]
+        vs2["category"] = "Viruses"
+        vs2.columns = ["vs2_" + x for x in vs2.columns.values.tolist()]
+        vs2 = vs2.rename({"vs2_seqname":"seq_name"}, axis=1)
+        vs2 = vs2[vs2["vs2_max_score_group"]!="RNA"]
+        vs2 = vs2.loc[:, ["seq_name", "vs2_category"]].reset_index(drop=True)
+    else:
+        vs2["completeness"] = None
+        vs2["seqname"] = None
+        vs2["category"] = None
+        vs2.columns = ["vs2_" + x for x in vs2.columns.values.tolist()]
+        vs2 = vs2.rename({"vs2_seqname":"seq_name"}, axis=1)
+        vs2 = vs2[vs2["vs2_max_score_group"]!="RNA"]
+        vs2 = vs2.loc[:, ["seq_name", "vs2_category"]].reset_index(drop=True)
     
     gnm_v["category"] = "Viruses"
     gnm_p["category"] = "Plasmids"
@@ -97,7 +107,11 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
 
 def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=3000):
     for fileHeader in fileHeader_list:
-        extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, min_len=min_len)
+        if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"putative_contigs.fasta")):
+            print(f"{fileHeader} has finished, skip.")
+            continue
+        else:
+            extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, min_len=min_len)
     
 def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
     
@@ -129,7 +143,11 @@ def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
 
 def find_rRNAs_multi_files(prj_dir, fileHeader_list, threads=32):
     for fileHeader in fileHeader_list:
-        find_rRNAs_single_file(prj_dir=prj_dir, fileHeader=fileHeader, threads=threads)
+        if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"rRNAs.tsv")):
+            print(f"{fileHeader} has finished, skip.")
+            continue
+        else:
+            find_rRNAs_single_file(prj_dir=prj_dir, fileHeader=fileHeader, threads=threads)
     
 def extract_decontaminated_contigs_single_file(prj_dir, fileHeader):
     
@@ -164,9 +182,15 @@ def extract_decontaminated_contigs_single_file(prj_dir, fileHeader):
     
 def extract_decontaminated_contigs_multi_files(prj_dir, fileHeader_list):
     for fileHeader in fileHeader_list:
-        extract_decontaminated_contigs_single_file(prj_dir=prj_dir, fileHeader=fileHeader)
+        if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"decontaminated_contigs.fasta")):
+            print(f"{fileHeader} has finished, skip.")
+            continue
+        else:
+            extract_decontaminated_contigs_single_file(prj_dir=prj_dir, fileHeader=fileHeader)
         
 def merge_confirmed_contigs(prj_dir, fileHeader_list):
+    if not os.path.isdir(os.path.join(prj_dir,"OVU")):
+        os.makedirs(os.path.join(prj_dir,"OVU"), exist_ok=True)
     with open(os.path.join(prj_dir,"OVU","merged_decontaminated_contigs.fasta"), 'w') as merged_confirmed_contigs:
         for fileHeader in fileHeader_list:
             if not os.path.exists(os.path.join(prj_dir, 'out', fileHeader, 'decontaminated_contigs.fasta')):
@@ -187,8 +211,10 @@ def dedup(prj_dir):
     dedup_details = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup_detail.txt")
     dup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dup.fasta")
     dedup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta")
+    if not os.path.isdir(os.path.join(prj_dir,"OVU")):
+        os.makedirs(os.path.join(prj_dir,"OVU"), exist_ok=True)
     bash_commands = [
-        f"source {envs.CONDA_PATH}/bin/activate vip\n",
+        f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}\n",
         f"cat {merged_fasta} | seqkit rmdup -s -D {dedup_details} -d {dup} -o {dedup}\n",
     ]
     with open(os.path.join(prj_dir, "dedup_tmp.sh"), 'w') as f:
@@ -198,21 +224,46 @@ def dedup(prj_dir):
     os.system(os.path.join(prj_dir, "dedup_tmp.sh"))
     os.remove(os.path.join(prj_dir, "dedup_tmp.sh"))
 
-def check_quality(prj_dir, threads):
+def check_quality(prj_dir, threads=4):
     dedup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta")
     quality_check_dir = os.path.join(prj_dir,'OVU','quality_check')
     quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
-    bash_commands = [
-        f"source {envs.CONDA_PATH}/bin/activate vip\n",
-        f"checkv end_to_end {dedup} {quality_check_dir} -d {envs.CHECKV_DB_PATH} -t {threads}\n",
-        f"seqkit grep -f <(awk -F \'\t\' \'{{if ($6 == 0 && $8 == \"Not-determined\") {{next;}} print $1}}\' {quality_check_dir}/quality_summary.tsv | sed \'1d\') {dedup} > {quality_filtered_fasta}\n",
+    log = os.path.join(prj_dir,'OVU')
+    job = os.path.join(prj_dir,'OVU',"check_quality.pbs")
+    if not os.path.isdir(os.path.join(prj_dir,"OVU")):
+        os.makedirs(os.path.join(prj_dir,"OVU"), exist_ok=True)
+    gadi_headers = [
+        "#!/bin/bash",
+        "# Job Name:",
+        "#PBS -N check_quality",
+        "# Project Info:",
+        "#PBS -P mp96",
+        "#PBS -l storage=gdata/oo46+gdata/mp96",
+        "# Log Output:",
+        f"#PBS -o {log}/check_quality.o",
+        f"#PBS -e {log}/check_quality.e",
+        "#PBS -j oe",
+        "# Mailing:",
+        "#PBS -m abe",
+        "#PBS -M 379004663@qq.com",
+        "# Resources Allocation:",
+        "#PBS -q normalsl",
+        "#PBS -l walltime=10:00:00",
+        "#PBS -l mem=64GB",
+        f"#PBS -l ncpus={threads}",
+        "#PBS -l jobfs=2GB",
     ]
-    with open(os.path.join(prj_dir, "check_quality_tmp.sh"), 'w') as f:
-        f.writelines("#!/bin/bash\n")
-        f.writelines(bash_commands)
-    os.system(f"chmod +x {os.path.join(prj_dir, 'check_quality_tmp.sh')}")
-    os.system(os.path.join(prj_dir, "check_quality_tmp.sh"))
-    os.remove(os.path.join(prj_dir, "check_quality_tmp.sh"))
+    bash_commands = [
+        f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}\n",
+        f"checkv end_to_end {dedup} {quality_check_dir} -d {envs.CHECKV_DB_PATH} -t {threads}\n",
+        f"seqkit grep -f <(awk -F \'\\t\' \'{{if ($6 == 0 && $8 == \"Not-determined\") {{next;}} print $1}}\' {quality_check_dir}/quality_summary.tsv | sed \'1d\') {dedup} > {quality_filtered_fasta}\n",
+    ]
+    script = [ line+"\n" for line in (gadi_headers+bash_commands)]
+    with open(job, 'w') as f:
+        f.writelines(script)
+    # os.system(f"chmod +x {os.path.join(prj_dir, 'check_quality_tmp.sh')}")
+    # os.system(os.path.join(prj_dir, "check_quality_tmp.sh"))
+    # os.remove(os.path.join(prj_dir, "check_quality_tmp.sh"))
 
 def cluster(prj_dir, threads):
     job = os.path.join(prj_dir,"OVU","blast_cluster_filtered.pbs")
@@ -240,7 +291,7 @@ def cluster(prj_dir, threads):
         "#PBS -l jobfs=2GB",
     ]
     bash_commands = [
-        f"source {envs.CONDA_PATH}/bin/activate vip",
+        f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}",
         f"echo \"make blast db ...\"",
         f"makeblastdb -in {prj_dir}/OVU/quality_filtered_contigs.fasta -out {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -dbtype nucl",
         f"echo \"blasting ...\"",

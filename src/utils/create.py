@@ -73,6 +73,8 @@ def make_sample_dirs(proj_dir):
         os.makedirs(os.path.join(proj_dir,"out",fileHeader,"VirSorter2_results"), exist_ok=True)
         os.makedirs(os.path.join(proj_dir,"out",fileHeader,"GeNomad_results"), exist_ok=True)
         os.makedirs(os.path.join(proj_dir,"out",fileHeader,"ViraLM_results"), exist_ok=True)
+        os.makedirs(os.path.join(proj_dir,"OVU"), exist_ok=True)
+        os.makedirs(os.path.join(proj_dir,"Abundance"), exist_ok=True)
         
 if __name__=="__main__":
     pass

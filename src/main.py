@@ -87,7 +87,8 @@ def main():
     if args.modules=="dedup":
         post_process.dedup(prj_dir=project_dir)
     if args.modules=="check_quality":
-        post_process.check_quality(prj_dir=project_dir)
+        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        post_process.check_quality(prj_dir=project_dir, threads=proj_config["gadi"]["-l ncpus"])
     if args.modules=="cluster":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         post_process.cluster(prj_dir=project_dir, threads=proj_config["gadi"]["-l ncpus"])

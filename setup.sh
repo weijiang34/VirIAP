@@ -3,20 +3,27 @@
 WORKING_DIR=$(pwd)
 CONDA_ENVS_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //')
 CONDA_PATH=$(conda info | grep 'envs directories' | cut -d':' -f2 | sed 's/^ //' | sed 's/\/envs$//')
+MAIN_ENV_NAME="viriap"
 
 install_tools() {
-    echo "INFO: Creating conda env: viriap ..."
-    conda env create -n viriap -f $WORKING_DIR/environment.yml
+    echo "INFO: Creating conda env: $MAIN_ENV_NAME ..."
+    conda create -n $MAIN_ENV_NAME pandas ruamel.yaml strobealign samtools --yes
+
+    source $CONDA_PATH/bin/activate $MAIN_ENV_NAME
+    conda activate $MAIN_ENV_NAME
+    
+    conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv --yes
+    # conda env create -n viriap -f environment.yml
     mkdir -p $WORKING_DIR/dependencies
     # CAT
-    echo "INFO: [1/4] Installing CAT_pack ..."
+    echo "INFO: [1/5] Installing CAT_pack ..."
     if [ -d $WORKING_DIR/dependencies/CAT_pack ]; then
         rm -r $WORKING_DIR/dependencies/CAT_pack
     fi 
     cd $WORKING_DIR/dependencies
     git clone https://github.com/MGXlab/CAT_pack.git
     # VirSorter2
-    echo "INFO: [2/4] Installing Virsorter2 ..."
+    echo "INFO: [2/5] Installing Virsorter2 ..."
     if conda info --envs | grep -q -w "vs2"; then
         echo -e "\tEnv: 'vs2' already exists."
     else
@@ -28,7 +35,7 @@ install_tools() {
         fi
     fi
     # GeNomad
-    echo "INFO: [3/4] Installing GeNomad ..."
+    echo "INFO: [3/5] Installing GeNomad ..."
     if conda info --envs | grep -q -w "genomad"; then
         echo -e "\tEnv: 'genomad' already exists."
     else
@@ -40,8 +47,7 @@ install_tools() {
         fi
     fi
     # ViraLM
-    echo "INFO: [4/4] Installing ViraLM ..."
-    ENV_NAME="viralm"
+    echo "INFO: [4/5] Installing ViraLM ..."
     if conda info --envs | grep -q -w "viralm"; then
         echo -e "\tEnv: 'viralm' already exists."
     else
@@ -55,12 +61,30 @@ install_tools() {
             echo -e "\tEnv: 'viralm' created."
         fi
     fi
+    # vcontacct3
+    echo "INFO: [5/5] Installing vContact3 ..."
+    if conda info --envs | grep -q -w "vcontact3"; then
+        echo -e "\tEnv: 'vcontact3' already exists."
+    else
+        echo -e "\tEnv: 'vcontact3' not existed, creating..."
+        conda create -n vcontact3 bioconda::vcontact3 --yes
+        if [ $? -eq 0 ]; then
+            echo -e "\tEnv: 'vcontact3' created."
+        fi
+    fi
     # tool path check and env variables settings
     if [ -f $WORKING_DIR/src/envs.py ];then
         rm $WORKING_DIR/src/envs.py
     fi
+    # conda path check
     if [ -d $CONDA_PATH ];then
         echo "CONDA_PATH = \"$CONDA_PATH\"" >> $WORKING_DIR/src/envs.py
+    fi
+    # main env check
+    if [ -d $CONDA_ENVS_PATH/$MAIN_ENV_NAME ]; then
+        echo -e "MAIN_ENV_NAME = \"${MAIN_ENV_NAME}\"" >> $WORKING_DIR/src/envs.py
+    else
+        echo "MAIN_ENV_NAME = " >> $WORKING_DIR/src/envs.py
     fi
     # CAT_pack  
     if [ -f $WORKING_DIR/dependencies/CAT_pack/CAT_pack/CAT_pack ]; then
@@ -87,28 +111,34 @@ install_tools() {
         echo "VIRALM_PATH = " >> $WORKING_DIR/src/envs.py
     fi
     # checkv
-    if [ -f $CONDA_ENVS_PATH/vip/bin/checkv ]; then
-        echo -e "CHECKV_PATH = \"$CONDA_ENVS_PATH/vip/bin/checkv\"" >> $WORKING_DIR/src/envs.py
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv ]; then
+        echo -e "CHECKV_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "CHECKV_PATH = " >> $WORKING_DIR/src/envs.py
     fi
     # strobealign
-    if [ -f $CONDA_ENVS_PATH/vip/bin/strobealign ]; then
-        echo -e "STROBEALIGN_PATH = \"$CONDA_ENVS_PATH/vip/bin/strobealign\"" >> $WORKING_DIR/src/envs.py
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/strobealign ]; then
+        echo -e "STROBEALIGN_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/strobealign\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "STROBEALIGN_PATH = " >> $WORKING_DIR/src/envs.py
     fi
     # samtools
-    if [ -f $CONDA_ENVS_PATH/vip/bin/samtools ]; then
-        echo -e "SAMTOOLS_PATH = \"$CONDA_ENVS_PATH/vip/bin/samtools\"" >> $WORKING_DIR/src/envs.py
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/samtools ]; then
+        echo -e "SAMTOOLS_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/samtools\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "SAMTOOLS_PATH = " >> $WORKING_DIR/src/envs.py
     fi
     # featureCounts
-    if [ -f $CONDA_ENVS_PATH/vip/bin/featureCounts ]; then
-        echo -e "FEATURECOUNTS_PATH = \"$CONDA_ENVS_PATH/vip/bin/featureCounts\"" >> $WORKING_DIR/src/envs.py
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/featureCounts ]; then
+        echo -e "FEATURECOUNTS_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/featureCounts\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "FEATURECOUNTS_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # vContact3 
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/featureCounts ]; then
+        echo -e "VCONTACT3_PATH = \"$CONDA_ENVS_PATH/vcontact3/bin/vcontact3\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "VCONTACT3_PATH = " >> $WORKING_DIR/src/envs.py
     fi
 }
 
@@ -118,7 +148,7 @@ prepare_databases() {
     if [ ! -d $WORKING_DIR/dependencies/checkvdb ]; then
         mkdir $WORKING_DIR/dependencies/checkvdb
     fi
-    $CONDA_ENVS_PATH/vip/bin/checkv download_database $WORKING_DIR/dependencies/checkvdb/
+    $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv download_database $WORKING_DIR/dependencies/checkvdb/
     # CAT_pack nr
     echo -e "\tPreparing CAT_pack_nr_db ..."
     if [ -d $WORKING_DIR/dependencies/CAT_pack_nr_db ]; then
@@ -170,6 +200,20 @@ prepare_databases() {
     else
         echo -e "[WARNING]: Conda environment: 'viralm' not existed, viralm model installation failed."
     fi
+    # vcontact3 db
+    if [ -d $WORKING_DIR/dependencies/vcontact3_db ]; then
+        rm -rf $WORKING_DIR/dependencies/vcontact3_db
+    fi 
+    if conda info --envs | grep -q -w "vcontact3"; then
+        cd $WORKING_DIR/dependencies
+        mkdir $WORKING_DIR/dependencies/vcontact3_db
+        source $CONDA_PATH/bin/activate vcontact3
+        # download and setup the model
+        vcontact3 prepare_databases --get-version "latest" --set-location $WORKING_DIR/dependencies/vcontact3_db
+        conda deactivate
+    else
+        echo -e "[WARNING]: Conda environment: 'vcontact3' not existed, vcontact3_db installation failed."
+    fi
 
     # db path check and env variables settings
     # CAT_pack_nr_db
@@ -189,6 +233,12 @@ prepare_databases() {
         echo -e "CEHCKV_DB_PATH = \"${$compgen -d $WORKING_DIR/dependencies/checkvdb}\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "CEHCKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # vcontact3_db
+    if [ -d $WORKING_DIR/dependencies/vcontact3 ] && compgen -d $WORKING_DIR/dependencies/vcontact3 > /dev/null; then
+        echo -e "VCONTACT3_DB_PATH = \"$WORKING_DIR/dependencies/vcontact3_db\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "VCONTACT3_DB_PATH = " >> $WORKING_DIR/src/envs.py
     fi
 
 }
