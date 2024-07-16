@@ -24,7 +24,7 @@ install_tools() {
     # CAT
     echo "INFO: [1/5] Installing CAT_pack ..."
     if [ -d $WORKING_DIR/dependencies/CAT_pack ]; then
-        rm -r $WORKING_DIR/dependencies/CAT_pack
+        rm -rf $WORKING_DIR/dependencies/CAT_pack
     fi 
     cd $WORKING_DIR/dependencies
     git clone https://github.com/MGXlab/CAT_pack.git
