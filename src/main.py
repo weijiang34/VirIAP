@@ -41,7 +41,7 @@ def main():
     subparser_cluster = subparsers.add_parser("cluster", help="Use ANI and AF results from blast all against all to cluster viral contigs.")
     
     subparser_mapping = subparsers.add_parser("mapping", help="Map clean paired-end reads to representative contigs using strobealign, and calculate relative abundance.")
-    subparser_mapping.add_argument("--manifest", type=str, help="a three column csv file, with columns: fileHeader,fq1,fq2")
+    subparser_mapping.add_argument("--manifest", required=True, type=str, help="a three column csv file, with columns: fileHeader,fq1,fq2")
     mapping_option = subparser_mapping.add_mutually_exclusive_group(required=True)
     mapping_option.add_argument("--indexing", action="store_true", help="Generate jobs for building strobealign index with representative viral contigs.")
     mapping_option.add_argument("--mapping", action="store_true", help="Generate jobs for mapping batches of samples to the representatives.")

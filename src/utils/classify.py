@@ -7,27 +7,27 @@ from Bio import SeqIO
 def anno_vContact3(prj_dir, config):
     job = f"{prj_dir}/Annotation/job_vContact3.pbs"
     log = f"{prj_dir}/Annotation"
-    threads = config["gadi"]["-l ncpus"]
+    threads = config['gadi']['-l ncpus']
     gadi_headers = [
         "#!/bin/bash",
         "# Job Name:",
         "#PBS -N anno_vContact3",
         "# Project Info:",
-        f"#PBS -P {config["gadi"]["-P project"]}",
-        f"#PBS -l storage={config["gadi"]["-l storage"]}",
+        f"#PBS -P {config['gadi']['-P project']}",
+        f"#PBS -l storage={config['gadi']['-l storage']}",
         "# Log Output:",
         f"#PBS -o {log}/anno_vContact3.o",
         f"#PBS -e {log}/anno_vContact3.e",
         "#PBS -j oe",
         "# Mailing:",
         "#PBS -m abe",
-        f"#PBS -M {config["gadi"]["-M mail_addr"]}",
+        f"#PBS -M {config['gadi']['-M mail_addr']}",
         "# Resources Allocation:",
         "#PBS -q normalsl",
-        f"#PBS -l walltime={config["gadi"]["-l walltime"]}",
-        f"#PBS -l mem={config["gadi"]["-l mem"]}",
+        f"#PBS -l walltime={config['gadi']['-l walltime']}",
+        f"#PBS -l mem={config['gadi']['-l mem']}",
         f"#PBS -l ncpus={threads}",
-        f"#PBS -l jobfs={config["gadi"]["-l jobfs"]}",
+        f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
     ]
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate vcontact3",

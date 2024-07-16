@@ -230,7 +230,7 @@ def check_quality(prj_dir, config):
     quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
     log = os.path.join(prj_dir,'OVU')
     job = os.path.join(prj_dir,'OVU',"check_quality.pbs")
-    threads = config["gadi"]["-l ncpus"]
+    threads = config['gadi']['-l ncpus']
     if not os.path.isdir(os.path.join(prj_dir,"OVU")):
         os.makedirs(os.path.join(prj_dir,"OVU"), exist_ok=True)
     gadi_headers = [
@@ -238,21 +238,21 @@ def check_quality(prj_dir, config):
         "# Job Name:",
         "#PBS -N check_quality",
         "# Project Info:",
-        f"#PBS -P {config["gadi"]["-P project"]}",
-        f"#PBS -l storage={config["gadi"]["-l storage"]}",
+        f"#PBS -P {config['gadi']['-P project']}",
+        f"#PBS -l storage={config['gadi']['-l storage']}",
         "# Log Output:",
         f"#PBS -o {log}/check_quality.o",
         f"#PBS -e {log}/check_quality.e",
         "#PBS -j oe",
         "# Mailing:",
         "#PBS -m abe",
-        f"#PBS -M {config["gadi"]["-M mail_addr"]}",
+        f"#PBS -M {config['gadi']['-M mail_addr']}",
         "# Resources Allocation:",
         "#PBS -q normalsl",
         "#PBS -l walltime=10:00:00",
         "#PBS -l mem=64GB",
         f"#PBS -l ncpus={threads}",
-        f"#PBS -l jobfs={config["gadi"]["-l jobfs"]}",
+        f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
     ]
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}\n",
@@ -277,21 +277,21 @@ def cluster(prj_dir, config):
         "# Job Name:",
         "#PBS -N blast_cluster",
         "# Project Info:",
-        f"#PBS -P {config["gadi"]["-P project"]}",
-        f"#PBS -l storage={config["gadi"]["-l storage"]}",
+        f"#PBS -P {config['gadi']['-P project']}",
+        f"#PBS -l storage={config['gadi']['-l storage']}",
         "# Log Output:",
         f"#PBS -o {log}/blast_cluster.o",
         f"#PBS -e {log}/blast_cluster.e",
         "#PBS -j oe",
         "# Mailing:",
         "#PBS -m abe",
-        f"#PBS -M {config["gadi"]["-M mail_addr"]}",
+        f"#PBS -M {config['gadi']['-M mail_addr']}",
         "# Resources Allocation:",
         "#PBS -q normalsl",
         "#PBS -l walltime=10:00:00",
         "#PBS -l mem=64GB",
-        f"#PBS -l ncpus={config["gadi"]["-l ncpus"]}",
-        f"#PBS -l jobfs={config["gadi"]["-l jobfs"]}",
+        f"#PBS -l ncpus={config['gadi']['-l ncpus']}",
+        f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
     ]
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}",
@@ -305,7 +305,7 @@ def cluster(prj_dir, config):
         f"python {os.path.join(script_path, 'cluster.py')} --fna {quality_filtered_fasta} --ani {prj_dir}/OVU/filtered_ani.tsv --out {prj_dir}/OVU/filtered_clusters.tsv --min_ani 95 --min_qcov 0 --min_tcov 85",
         f"echo \"cluster finished\"",
         f"echo \"extract representatives ...\"",
-        f"seqkit grep -f <(cat {prj_dir}/OVU/OVUs_info.csv | cut -d ',' -f2 | sed '1d') {quality_filtered_fasta} > {prj_dir}/OVU/rep_contigs.fasta",
+        f"seqkit grep -f <(cat {prj_dir}/OVU/filtered_clusters.tsv | cut -f1) {quality_filtered_fasta} > {prj_dir}/OVU/rep_contigs.fasta",
         f"echo \"finished\"",
     ]
     script_lines = gadi_headers + bash_commands
