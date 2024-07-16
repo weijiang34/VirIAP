@@ -14,6 +14,7 @@ cd VirIAP/
 bash setup.sh --tools
 bash setup.sh --databases
 ```
+NOTE: Both these two steps requires internet connection, please make sure your PC/server node has the ineernet connection. The installation will take some time because there are lots of softwares and databases required, please wait atiently.
 
 <!-- ***NOTE:***  
 The installation requires the following steps, if the installation failed, you may aslo follow these steps.  

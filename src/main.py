@@ -1,6 +1,6 @@
 import os
 import argparse
-from utils import create, config, gadi_job, check_completeness, post_process, mapping
+from utils import create, config, gadi_job, check_completeness, post_process, mapping, classify
 import pandas as pd
 
 def main():
@@ -34,7 +34,7 @@ def main():
     subparser_extract.add_argument("-c", "--num_confirmed_tools", type=int, default=2, help="Minimum number of tools to confirm.")
 
     subparser_filter = subparsers.add_parser("decontam", help="Decontamination: filter out rRNAs from bac,euk,arc,mito.")
-    subparser_confirm = subparsers.add_parser("confirm", help="Output confirmed viral contigs.")
+    # subparser_confirm = subparsers.add_parser("confirm", help="Output confirmed viral contigs.")
     subparser_merge = subparsers.add_parser("merge", help="Merge all confirmed viral contigs into one fasta file.")
     subparser_dedup = subparsers.add_parser("dedup", help="Remove exactly the same contigs.")
     subparser_quality_check = subparsers.add_parser("check_quality", help="Use CheckV to check the quality of merged viral contigs.")
@@ -46,6 +46,8 @@ def main():
     mapping_option.add_argument("--indexing", action="store_true", help="Generate jobs for building strobealign index with representative viral contigs.")
     mapping_option.add_argument("--mapping", action="store_true", help="Generate jobs for mapping batches of samples to the representatives.")
     mapping_option.add_argument("--count_matrix", action="store_true", help="Count number of reads and calculate FPKM and TPM.")
+
+    subparser_classify = subparsers.add_parser("classify", help="Classify OVU representatives and merge lineage results from CAT, GeNomad and vContact3.")
 
     args = parser.parse_args()
 
@@ -79,8 +81,7 @@ def main():
             post_process.extract_putative_contigs_multi_samples(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist(), min_len=args.min_length)
         if args.modules=="decontam":
             proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-            post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist(), threads=proj_config["gadi"]["-l ncpus"])
-        if args.modules=="confirm":
+            post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), threads=proj_config["gadi"]["-l ncpus"]) # [fileHeader_list["completed"]==False]
             post_process.extract_decontaminated_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list[fileHeader_list["completed"]==False].loc[:,"fileHeader"].tolist())
     if args.modules=="merge":
         post_process.merge_confirmed_contigs(prj_dir=project_dir, fileHeader_list=os.listdir(os.path.join(project_dir, "out")))
@@ -88,10 +89,10 @@ def main():
         post_process.dedup(prj_dir=project_dir)
     if args.modules=="check_quality":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-        post_process.check_quality(prj_dir=project_dir, threads=proj_config["gadi"]["-l ncpus"])
+        post_process.check_quality(prj_dir=project_dir, config=proj_config)
     if args.modules=="cluster":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-        post_process.cluster(prj_dir=project_dir, threads=proj_config["gadi"]["-l ncpus"])
+        post_process.cluster(prj_dir=project_dir, config=proj_config)
     if args.modules=="mapping":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.indexing==True:
@@ -100,6 +101,11 @@ def main():
             mapping.mapping(prj_dir=project_dir, manifest=args.manifest, threads=proj_config["gadi"]["-l ncpus"])
         if args.count_matrix==True:
             mapping.count_matrix(prj_dir=project_dir, manifest=args.manifest)
+    if args.modules=="classify":
+        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        classify.anno_vContact3(prj_dir=project_dir, config=proj_config)
+        classify.summarise_OVUs(prj_dir=project_dir)
+
     
 
 if __name__ == "__main__":

@@ -224,12 +224,13 @@ def dedup(prj_dir):
     os.system(os.path.join(prj_dir, "dedup_tmp.sh"))
     os.remove(os.path.join(prj_dir, "dedup_tmp.sh"))
 
-def check_quality(prj_dir, threads=4):
+def check_quality(prj_dir, config):
     dedup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta")
     quality_check_dir = os.path.join(prj_dir,'OVU','quality_check')
     quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
     log = os.path.join(prj_dir,'OVU')
     job = os.path.join(prj_dir,'OVU',"check_quality.pbs")
+    threads = config["gadi"]["-l ncpus"]
     if not os.path.isdir(os.path.join(prj_dir,"OVU")):
         os.makedirs(os.path.join(prj_dir,"OVU"), exist_ok=True)
     gadi_headers = [
@@ -237,21 +238,21 @@ def check_quality(prj_dir, threads=4):
         "# Job Name:",
         "#PBS -N check_quality",
         "# Project Info:",
-        "#PBS -P mp96",
-        "#PBS -l storage=gdata/oo46+gdata/mp96",
+        f"#PBS -P {config["gadi"]["-P project"]}",
+        f"#PBS -l storage={config["gadi"]["-l storage"]}",
         "# Log Output:",
         f"#PBS -o {log}/check_quality.o",
         f"#PBS -e {log}/check_quality.e",
         "#PBS -j oe",
         "# Mailing:",
         "#PBS -m abe",
-        "#PBS -M 379004663@qq.com",
+        f"#PBS -M {config["gadi"]["-M mail_addr"]}",
         "# Resources Allocation:",
         "#PBS -q normalsl",
         "#PBS -l walltime=10:00:00",
         "#PBS -l mem=64GB",
         f"#PBS -l ncpus={threads}",
-        "#PBS -l jobfs=2GB",
+        f"#PBS -l jobfs={config["gadi"]["-l jobfs"]}",
     ]
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}\n",
@@ -265,44 +266,46 @@ def check_quality(prj_dir, threads=4):
     # os.system(os.path.join(prj_dir, "check_quality_tmp.sh"))
     # os.remove(os.path.join(prj_dir, "check_quality_tmp.sh"))
 
-def cluster(prj_dir, threads):
-    job = os.path.join(prj_dir,"OVU","blast_cluster_filtered.pbs")
-    log = ""
+def cluster(prj_dir, config):
+    job = os.path.join(prj_dir,"OVU","blast_cluster.pbs")
+    log = os.path.join(prj_dir,"OVU")
+    quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
+    script_path = os.path.join(envs.INSTALLATION_PATH,"src")
 
     gadi_headers = [
         "#!/bin/bash",
         "# Job Name:",
         "#PBS -N blast_cluster",
         "# Project Info:",
-        "#PBS -P mp96",
-        "#PBS -l storage=gdata/oo46+gdata/mp96",
+        f"#PBS -P {config["gadi"]["-P project"]}",
+        f"#PBS -l storage={config["gadi"]["-l storage"]}",
         "# Log Output:",
         f"#PBS -o {log}/blast_cluster.o",
         f"#PBS -e {log}/blast_cluster.e",
         "#PBS -j oe",
         "# Mailing:",
         "#PBS -m abe",
-        "#PBS -M 379004663@qq.com",
+        f"#PBS -M {config["gadi"]["-M mail_addr"]}",
         "# Resources Allocation:",
         "#PBS -q normalsl",
         "#PBS -l walltime=10:00:00",
         "#PBS -l mem=64GB",
-        f"#PBS -l ncpus={threads}",
-        "#PBS -l jobfs=2GB",
+        f"#PBS -l ncpus={config["gadi"]["-l ncpus"]}",
+        f"#PBS -l jobfs={config["gadi"]["-l jobfs"]}",
     ]
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}",
         f"echo \"make blast db ...\"",
-        f"makeblastdb -in {prj_dir}/OVU/quality_filtered_contigs.fasta -out {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -dbtype nucl",
+        f"makeblastdb -in {quality_filtered_fasta} -out {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -dbtype nucl",
         f"echo \"blasting ...\"",
-        f"blastn -query {prj_dir}/OVU/quality_filtered_contigs.fasta -db {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -out {prj_dir}/OVU/filtered_blast.tsv -outfmt '6 std qlen slen' -max_target_seqs 25000 -perc_identity 90",
+        f"blastn -query {quality_filtered_fasta} -db {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -out {prj_dir}/OVU/filtered_blast.tsv -outfmt '6 std qlen slen' -max_target_seqs 25000 -perc_identity 90",
         f"echo \"blast finished\"",
-        f"python blastani.py -i {prj_dir}/OVU/filtered_blast.tsv -o {prj_dir}/OVU/filtered_ani.tsv",
+        f"python {os.path.join(script_path, 'blastani.py')} -i {prj_dir}/OVU/filtered_blast.tsv -o {prj_dir}/OVU/filtered_ani.tsv",
         f"echo \"compute ANI finished\"",
-        f"python cluster.py --fna {prj_dir}/OVU/quality_filtered_contigs.fasta --ani {prj_dir}/OVU/filtered_ani.tsv --out {prj_dir}/OVU/filtered_clusters.tsv --min_ani 95 --min_qcov 0 --min_tcov 85",
+        f"python {os.path.join(script_path, 'cluster.py')} --fna {quality_filtered_fasta} --ani {prj_dir}/OVU/filtered_ani.tsv --out {prj_dir}/OVU/filtered_clusters.tsv --min_ani 95 --min_qcov 0 --min_tcov 85",
         f"echo \"cluster finished\"",
         f"echo \"extract representatives ...\"",
-        f"seqkit grep -f <(cat {prj_dir}/OVU/OVUs_info.csv | cut -d ',' -f2 | sed '1d') {prj_dir}/OVU/quality_filtered_contigs.fasta > {prj_dir}/OVU/rep_contigs.fasta",
+        f"seqkit grep -f <(cat {prj_dir}/OVU/OVUs_info.csv | cut -d ',' -f2 | sed '1d') {quality_filtered_fasta} > {prj_dir}/OVU/rep_contigs.fasta",
         f"echo \"finished\"",
     ]
     script_lines = gadi_headers + bash_commands

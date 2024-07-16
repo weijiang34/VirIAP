@@ -26,7 +26,7 @@ def check_complete_singlefile(series, prj_dir: str="."):
     if os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"rRNAs.tsv")): 
         s["decontamination"] = True
     # check confirmed
-    if os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"confirmed_contigs.fasta")): 
+    if os.path.exists(os.path.join(prj_dir,"out",s["fileHeader"],"decontaminated_contigs.fasta")): 
         s["confirmed"] = True
     
     if s[columns_to_check].all():

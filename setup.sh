@@ -68,7 +68,7 @@ install_tools() {
             echo -e "\tEnv: 'viralm' created."
         fi
     fi
-    # vcontacct3
+    # vcontact3
     echo "INFO: [5/5] Installing vContact3 ..."
     if conda info --envs | grep -q -w "vcontact3"; then
         echo -e "\tEnv: 'vcontact3' already exists."
@@ -87,6 +87,7 @@ install_tools() {
     if [ -d $CONDA_PATH ];then
         echo "CONDA_PATH = \"$CONDA_PATH\"" >> $WORKING_DIR/src/envs.py
     fi
+    echo "INSTALLATION_PATH = \"$WORKING_DIR\"" >> $WORKING_DIR/src/envs.py
     # main env check
     if [ -d $CONDA_ENVS_PATH/$MAIN_ENV_NAME ]; then
         echo -e "MAIN_ENV_NAME = \"${MAIN_ENV_NAME}\"" >> $WORKING_DIR/src/envs.py
@@ -216,7 +217,7 @@ prepare_databases() {
         mkdir $WORKING_DIR/dependencies/vcontact3_db
         source $CONDA_PATH/bin/activate vcontact3
         # download and setup the model
-        vcontact3 prepare_databases --get-version "latest" --set-location $WORKING_DIR/dependencies/vcontact3_db
+        vcontact3 prepare_databases --get-version "220" --set-location $WORKING_DIR/dependencies/vcontact3_db
         conda deactivate
     else
         echo -e "[WARNING]: Conda environment: 'vcontact3' not existed, vcontact3_db installation failed."
@@ -244,8 +245,10 @@ prepare_databases() {
     # vcontact3_db
     if [ -d $WORKING_DIR/dependencies/vcontact3 ] && compgen -d $WORKING_DIR/dependencies/vcontact3 > /dev/null; then
         echo -e "VCONTACT3_DB_PATH = \"$WORKING_DIR/dependencies/vcontact3_db\"" >> $WORKING_DIR/src/envs.py
+        echo -e "VCONTACT3_DB_VERSION = \"220\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "VCONTACT3_DB_PATH = " >> $WORKING_DIR/src/envs.py
+        echo "VCONTACT3_DB_VERSION = " >> $WORKING_DIR/src/envs.py
     fi
 
 }
