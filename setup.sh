@@ -152,75 +152,82 @@ install_tools() {
 
 prepare_databases() {
     # checkv
-    echo -e "\tPreparing checkv db ..."
+    echo -e "Preparing checkv db ..."
     if [ ! -d $WORKING_DIR/dependencies/checkvdb ]; then
         mkdir $WORKING_DIR/dependencies/checkvdb
-    fi
-    $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv download_database $WORKING_DIR/dependencies/checkvdb/
-    # CAT_pack nr
-    echo -e "\tPreparing CAT_pack_nr_db ..."
-    if [ -d $WORKING_DIR/dependencies/CAT_pack_nr_db ]; then
-        rm -rf $WORKING_DIR/dependencies/CAT_pack_nr_db
-    fi
-    cd $WORKING_DIR/dependencies
-    mkdir $WORKING_DIR/dependencies/CAT_pack_nr_db
-    cd $WORKING_DIR/dependencies/CAT_pack_nr_db
-    wget -c tbb.bio.uu.nl/tina/CAT_pack_prepare/20240422_CAT_nr.tar.gz
-    tar -xvzf 20240422_CAT_nr.tar.gz
-    # vs2 db
-    echo -e "\tPreparing vs2_db ..."
-    if [ -d $WORKING_DIR/dependencies/vs2_db ]; then
-        rm -rf $WORKING_DIR/dependencies/vs2_db
-    fi
-    if conda info --envs | grep -q -w "vs2"; then
-        cd $WORKING_DIR/dependencies
-        source $CONDA_PATH/bin/activate vs2 
-        virsorter setup -d vs2_db -j 4
-        conda deactivate
+        $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv download_database $WORKING_DIR/dependencies/checkvdb/
     else
-        echo -e "[WARNING]: Conda environment: 'vs2' not existed, vs2_db installation failed."
+        echo -e "\tcheckv db exists."
+    fi
+    # CAT_pack nr
+    echo -e "Preparing CAT_pack_nr_db ..."
+    if [ ! -d $WORKING_DIR/dependencies/CAT_pack_nr_db ]; then
+        mkdir $WORKING_DIR/dependencies/CAT_pack_nr_db
+        cd $WORKING_DIR/dependencies/CAT_pack_nr_db
+        wget -c tbb.bio.uu.nl/tina/CAT_pack_prepare/20240422_CAT_nr.tar.gz
+        tar -xvzf 20240422_CAT_nr.tar.gz
+    else
+        echo -e "\tCAT_pack_nr_db exists."
+    fi
+    # vs2 db
+    echo -e "Preparing vs2_db ..."
+    if [ ! -d $WORKING_DIR/dependencies/vs2_db ]; then
+        if conda info --envs | grep -q -w "vs2"; then
+            cd $WORKING_DIR/dependencies
+            source $CONDA_PATH/bin/activate vs2 
+            virsorter setup -d vs2_db -j 4
+            conda deactivate
+        else
+            echo -e "[WARNING]: Conda environment: 'vs2' not existed, vs2_db installation failed."
+        fi
+    else
+        echo -e "\tvs2_db exists."
     fi
     # genomad db
-    echo -e "\tPreparing genomad db ..."
-    if [ -d $WORKING_DIR/dependencies/genomad_db ]; then
-        rm -rf $WORKING_DIR/dependencies/genomad_db
-    fi
-    if conda info --envs | grep -q -w "genomad"; then
-        source $CONDA_PATH/bin/activate genomad
-        genomad download-database ./dependencies/
-        conda deactivate
+    echo -e "Preparing genomad db ..."
+    if [ ! -d $WORKING_DIR/dependencies/genomad_db ]; then
+        if conda info --envs | grep -q -w "genomad"; then
+            source $CONDA_PATH/bin/activate genomad
+            genomad download-database $WORKING_DIR/dependencies/
+            conda deactivate
+        else
+            echo -e "[WARNING]: Conda environment: 'genomad' not existed, genomad db installation failed."
+        fi
     else
-        echo -e "[WARNING]: Conda environment: 'genomad' not existed, genomad db installation failed."
+        echo -e "\tgenomad db exists."
     fi
     # viralm model
-    echo -e "\tPreparing viralm model ..."
-    if [ -d $WORKING_DIR/dependencies/ViraLM/model ]; then
-        rm -rf $WORKING_DIR/dependencies/ViraLM/model
-    fi 
-    if conda info --envs | grep -q -w "viralm"; then
-        cd $WORKING_DIR/dependencies/ViraLM
-        source $CONDA_PATH/bin/activate viralm
-        # download and setup the model
-        gdown --id 1EQVPmFbpLGrBLU0xCtZBpwvXrtrRxic1
-        tar -xzvf model.tar.gz -C .
-        rm model.tar.gz
-        conda deactivate
+    echo -e "Preparing viralm model ..."
+    if [ ! -d $WORKING_DIR/dependencies/ViraLM/model ]; then
+        if conda info --envs | grep -q -w "viralm"; then
+            cd $WORKING_DIR/dependencies/ViraLM
+            source $CONDA_PATH/bin/activate viralm
+            # download and setup the model
+            gdown --id 1EQVPmFbpLGrBLU0xCtZBpwvXrtrRxic1
+            tar -xzvf model.tar.gz -C .
+            rm model.tar.gz
+            conda deactivate
+        else
+            echo -e "[WARNING]: Conda environment: 'viralm' not existed, viralm model installation failed."
+        fi
     else
-        echo -e "[WARNING]: Conda environment: 'viralm' not existed, viralm model installation failed."
+        echo -e "\tviralm model exists."
     fi
     # vcontact3 db
-    if [ -d $WORKING_DIR/dependencies/vcontact3_db ]; then
-        rm -rf $WORKING_DIR/dependencies/vcontact3_db
-    fi 
-    if conda info --envs | grep -q -w "vcontact3"; then
-        cd $WORKING_DIR/dependencies
-        mkdir $WORKING_DIR/dependencies/vcontact3_db
-        source $CONDA_PATH/bin/activate vcontact3
-        # download and setup the model
-        vcontact3 prepare_databases --get-version "220" --set-location $WORKING_DIR/dependencies/vcontact3_db
-        conda deactivate
+    echo -e "Preparing vContact3_db ..."
+    if [ ! -d $WORKING_DIR/dependencies/vcontact3_db ]; then
+        if conda info --envs | grep -q -w "vcontact3"; then
+            cd $WORKING_DIR/dependencies
+            mkdir $WORKING_DIR/dependencies/vcontact3_db
+            source $CONDA_PATH/bin/activate vcontact3
+            # download and setup the model
+            vcontact3 prepare_databases --get-version "220" --set-location $WORKING_DIR/dependencies/vcontact3_db
+            conda deactivate
+        else
+            echo -e "[WARNING]: Conda environment: 'vcontact3' not existed, vcontact3_db installation failed."
+        fi
     else
-        echo -e "[WARNING]: Conda environment: 'vcontact3' not existed, vcontact3_db installation failed."
+        echo -e "\tvContact3_db exists."
     fi
 
     # db path check and env variables settings
@@ -238,7 +245,7 @@ prepare_databases() {
     fi
     # checkvdb
     if [ -d $WORKING_DIR/dependencies/checkvdb ] && compgen -d $WORKING_DIR/dependencies/checkvdb > /dev/null; then
-        echo -e "CEHCKV_DB_PATH = \"${$compgen -d $WORKING_DIR/dependencies/checkvdb}\"" >> $WORKING_DIR/src/envs.py
+        echo -e "CEHCKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/checkvdb)\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "CEHCKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
     fi
