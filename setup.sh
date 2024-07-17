@@ -8,7 +8,7 @@ MAIN_ENV_NAME="viriap"
 install_tools() {
     
     if conda info --envs | grep -q -w "$MAIN_ENV_NAME"; then
-        echo -e "\tEnv: '$MAIN_ENV_NAME' already exists."
+        echo -e "Env: '$MAIN_ENV_NAME' already exists."
     else
         echo "INFO: Creating conda env: $MAIN_ENV_NAME ..."
         conda create -n $MAIN_ENV_NAME pandas ruamel.yaml strobealign samtools --yes
