@@ -1,6 +1,6 @@
 import os
 import argparse
-from utils import create, config, gadi_job, check_completeness, post_process, mapping, classify
+from utils import create, config, job_management, gadi_job, check_completeness, post_process, mapping, classify
 import pandas as pd
 
 def main():
@@ -69,9 +69,10 @@ def main():
         if args.generate==True:
             if args.max_batch_size==None: batch_size=proj_config["max_batch_size"]
             else: batch_size=args.max_batch_size
-            gadi_job.generate_jobs(project_dir=project_dir, config=proj_config, batch_size=batch_size)
-        elif subparser_search.submit==True:
-            gadi_job.submit_jobs(project_dir)
+            job_management.generate_jobs(project_dir=project_dir, config=proj_config, batch_size=batch_size)
+        elif args.submit==True:
+            print("Please submit the jobs manually, just to make sure all the resoures requiered are valid and proper.")
+            # gadi_job.submit_jobs(project_dir)
 
     if args.modules=="check":
         check_completeness.check_complete_multifile(prj_dir=project_dir)

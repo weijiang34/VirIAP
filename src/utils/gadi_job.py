@@ -122,7 +122,6 @@ class GadiJob():
                 f"source {envs.CONDA_PATH}/bin/activate vs2\n",
                 f'threads={self.job_configs.ncpus}',
                 '',
-                # 'source /g/data1b/oo46/wj6768/miniconda3/bin/activate /g/data1b/oo46/wj6768/miniconda3/envs/vs2',
                 ' ',
                 "file_list=(",
                 "{}".format('\n'.join(f'"{item}"' for item in file_list)),
@@ -179,7 +178,7 @@ class GadiJob():
             ],
             "VLM":[
                 f"source {envs.CONDA_PATH}/bin/activate viralm\n",
-                'threads=32',
+                f'threads={self.job_configs.ncpus}',
                 f'ViraLMPath={os.path.dirname(envs.VIRALM_PATH)}',
                 '',
                 # 'source /g/data1b/oo46/wj6768/miniconda3/bin/activate /g/data1b/oo46/wj6768/miniconda3/envs/viralm',
@@ -255,7 +254,7 @@ class GadiJob():
         if not os.path.exists(job_dir):
             os.mkdir(job_dir)
         self.job_texts = [line+"\n" for line in self.job_texts]
-        with open(os.path.join(job_dir, f"gadi_job_{self.job_configs.job_name}.pbs"), 'w') as f:
+        with open(os.path.join(job_dir, f"{self.job_configs.job_name}.pbs"), 'w') as f:
             f.writelines(self.job_texts)
 
     # Experimental functions

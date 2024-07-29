@@ -7,21 +7,18 @@ def init_project_config(path):
     default_config = {
         "project_dir": project_dir,
         "name": project_name,
-
         "max_batch_size": 10,
-        
-        "server_type": "gadi",
-        "gadi":{
-            "-l walltime": "48:00:00",
-            "-l mem": "192GB",
-            "-l ncpus": 32,
-            "-l ngpus": 0,
-            "-l jobfs": "2GB",
-            "-l storage": "",
-            "-P project": "",
-            "-q": "",
-            "-m": "",
-            "-M mail_addr": ""
+        "job_manager": "pbs",
+        "pbs": {
+            "ncpus": 32,
+            "mail_addr": "",
+            "gadi": {
+                "-l storage": "",
+                "-P project": "",
+            }
+        },
+        "bash": {
+            "ncpus": 32
         }
     }
     yaml = YAML()
