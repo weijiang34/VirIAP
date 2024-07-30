@@ -210,7 +210,7 @@ def mapping(prj_dir, manifest, config):
     return 
 
 def check(prj_dir, manifest):
-    manifest = pd.read_table(manifest, header=None, names=["fileHeader", "fq1", "fq2"])
+    manifest = pd.read_csv(manifest, header=None, names=["fileHeader", "fq1", "fq2"], index_col=None)
     mapping = pd.DataFrame({
         "fileHeader": manifest["fileHeader"],
         "mapping": False,
@@ -239,6 +239,7 @@ def count_matrix(prj_dir, manifest):
         for idx, row in mapping_check.iterrows():
             if row["mapping"]==False:
                 print(f"{idx}\t{row['fileHeader']}\tNo file")
+                continue
             else:
                 current_count = pd.read_table(
                     os.path.join(prj_dir, "Abundance", "out", row["fileHeader"], f"{row['fileHeader']}_count.tsv"),header=1,
@@ -248,7 +249,6 @@ def count_matrix(prj_dir, manifest):
                     all_count = current_count
                 else:
                     all_count = pd.merge(all_count, current_count, how='left')
-        all_count.to_csv(os.path.join(prj_dir, "Abundance", "all_count.csv"), index=None)
         return all_count
     
     def get_RPK(all_count):
