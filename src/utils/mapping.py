@@ -1,13 +1,14 @@
 import os
 import pandas as pd
 import envs
+from utils import job_management
 
 CONDA_PATH = envs.CONDA_PATH
 STROBEALIGN_PATH = envs.STROBEALIGN_PATH
 SAMTOOLS_PATH = envs.SAMTOOLS_PATH
 FEATURECOUNTS_PATH = envs.FEATURECOUNTS_PATH
 
-def indexing(prj_dir, threads=4):
+def indexing(prj_dir, config):
     os.makedirs(os.path.join(prj_dir,"Abundance"), exist_ok=True)
     os.makedirs(os.path.join(prj_dir,"Abundance","jobs"), exist_ok=True)
     os.makedirs(os.path.join(prj_dir,"Abundance","logs"), exist_ok=True)
@@ -15,34 +16,10 @@ def indexing(prj_dir, threads=4):
     fasta = os.path.join(prj_dir,"Abundance","rep_contigs.fasta")
     faidx = os.path.join(prj_dir,"Abundance","rep_contigs.fa.fai")
     gtf = os.path.join(prj_dir,"Abundance","rep_contigs.gtf")
-    job = os.path.join(prj_dir,"Abundance","jobs", "indexing.pbs")
-    logs = os.path.join(prj_dir,"Abundance","logs")
-    pbs_header = [
-        "#!/bin/bash",
-
-        "# Job Name:",
-        "#PBS -N indexing",
-
-        "# Project Info:",
-        "#PBS -P mp96",
-        "#PBS -l storage=gdata/oo46+gdata/mp96",
-
-        "# Log Output:",
-        f"#PBS -o {logs}/indexing.o",
-        f"#PBS -e {logs}/indexing.e",
-        "#PBS -j oe",
-
-        "# Mailing:",
-        "#PBS -m abe",
-        "#PBS -M 379004663@qq.com",
-        
-        "# Resources Allocation:",
-        "#PBS -q normalsl",
-        "#PBS -l walltime=2:00:00",
-        "#PBS -l mem=120GB",
-        f"#PBS -l ncpus={threads}",
-        "#PBS -l jobfs=2GB",
-    ]
+    job_dir = os.path.join(prj_dir,"Abundance","jobs")
+    log_dir = os.path.join(prj_dir,"Abundance","logs")
+    if config['job_manager'] in ['pbs', 'gadi']:
+        threads = config['pbs']['ncpus']
     bash_commands = [
         f"source {CONDA_PATH}/bin/activate vip\n",
         f"cp {prj_dir}/OVU/rep_contigs.fasta {prj_dir}/Abundance/\n",
@@ -50,10 +27,67 @@ def indexing(prj_dir, threads=4):
         f"{SAMTOOLS_PATH} faidx {fasta} -o {faidx}\n",
         f"awk \'BEGIN {{FS=\"\\t\"}}; {{print $1\"\\tclustering\\tcontig\\t1\\t\"$2\"\\t\"$2\"\\t+\\t1\\tcontig_id \\\"\"$1\"\\\"\"}}\' {faidx} > {gtf}\n",
     ]
-    os.makedirs(os.path.dirname(job), exist_ok=True)
-    os.makedirs(logs, exist_ok=True)
-    with open(job, 'w') as f:
-        f.writelines([line + "\n" for line in pbs_header] + bash_commands)
+    if config['job_manager']=='pbs':
+        cluster_job_header = job_management.PBSHeader(
+            job_name="indexing",
+            ncpus=threads,
+            ngpus=0,
+            mem="120GB",
+            walltime="10:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=f"{log_dir}/indexing.o",
+            log_e=f"{log_dir}/indexing.e",
+        )
+        cluster_job = job_management.Job(
+            job_manager='pbs',job_header=cluster_job_header, commands=bash_commands,
+        )
+        cluster_job.save_job(job_dir=job_dir)
+    elif config['job_manager']=='gadi':
+        cluster_job_header = job_management.GadiHeader(
+            job_name="indexing",
+            ncpus=threads,
+            ngpus=0,
+            mem="120GB",
+            walltime="10:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=os.path.join(log_dir, "indexing.o"),
+            log_e=os.path.join(log_dir, "indexing.e"),
+            project=config['pbs']['gadi']['-P project'],
+            storage=config['pbs']['gadi']['-l storage'],
+            node_type="normalsl",
+            jobfs="2GB",
+        )
+        cluster_job = job_management.Job(
+            job_manager='gadi',job_header=cluster_job_header, commands=bash_commands,
+        )
+        cluster_job.save_job(job_dir=job_dir)
+
+    # pbs_header = [
+    #     "#!/bin/bash",
+    #     "# Job Name:",
+    #     "#PBS -N indexing",
+    #     "# Project Info:",
+    #     "#PBS -P mp96",
+    #     "#PBS -l storage=gdata/oo46+gdata/mp96",
+    #     "# Log Output:",
+    #     f"#PBS -o {logs}/indexing.o",
+    #     f"#PBS -e {logs}/indexing.e",
+    #     "#PBS -j oe",
+    #     "# Mailing:",
+    #     "#PBS -m abe",
+    #     "#PBS -M 379004663@qq.com",  
+    #     "# Resources Allocation:",
+    #     "#PBS -q normalsl",
+    #     "#PBS -l walltime=2:00:00",
+    #     "#PBS -l mem=120GB",
+    #     f"#PBS -l ncpus={threads}",
+    #     "#PBS -l jobfs=2GB",
+    # ]
+    # os.makedirs(os.path.dirname(job), exist_ok=True)
+    # os.makedirs(logs, exist_ok=True)
+    # with open(job, 'w') as f:
+    #     f.writelines([line + "\n" for line in pbs_header] + bash_commands)
+    return
 
 def chunk_dataframe(df: pd.DataFrame, size: int=10):
     num_of_chunks = len(df) // size
@@ -67,13 +101,13 @@ def chunk_dataframe(df: pd.DataFrame, size: int=10):
         chunks.append(chunk)
     return chunks
 
-def mapping(prj_dir, manifest, threads=4):
+def mapping(prj_dir, manifest, config):
     os.makedirs(os.path.join(prj_dir,"Abundance"), exist_ok=True)
     os.makedirs(os.path.join(prj_dir,"Abundance","jobs"), exist_ok=True)
     os.makedirs(os.path.join(prj_dir,"Abundance","logs"), exist_ok=True)
     os.makedirs(os.path.join(prj_dir,"Abundance","out"), exist_ok=True)
 
-    df = pd.read_csv(manifest, header=None, names=["fileHeader", "fq1", "fq2"], index_col=None, sep='\t')
+    df = pd.read_csv(manifest, header=None, names=["fileHeader", "fq1", "fq2"], index_col=None)
     chunks = chunk_dataframe(df, size=10)
     fasta = os.path.join(prj_dir, "Abundance", "rep_contigs.fasta")
     gtf = os.path.join(prj_dir,"Abundance","rep_contigs.gtf")
@@ -83,34 +117,10 @@ def mapping(prj_dir, manifest, threads=4):
         fq1_list = chunk["fq1"].tolist()
         fq2_list = chunk["fq2"].tolist()
         header_pair_list = [header+"|"+fq1+"|"+fq2 for header,fq1,fq2 in zip(header_list,fq1_list,fq2_list)]
-        job = os.path.join(prj_dir,"Abundance","jobs", f"mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.pbs")
-        logs = os.path.join(prj_dir,"Abundance","logs")
-        pbs_header = [
-            "#!/bin/bash",
-
-            "# Job Name:",
-            f"#PBS -N mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-
-            "# Project Info:",
-            "#PBS -P mp96",
-            "#PBS -l storage=gdata/oo46+gdata/mp96",
-
-            "# Log Output:",
-            f"#PBS -o {logs}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o",
-            f"#PBS -e {logs}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.e",
-            "#PBS -j oe",
-
-            "# Mailing:",
-            "#PBS -m abe",
-            "#PBS -M 379004663@qq.com",
-            
-            "# Resources Allocation:",
-            "#PBS -q normalsl",
-            "#PBS -l walltime=2:30:00",
-            "#PBS -l mem=120GB",
-            f"#PBS -l ncpus={threads}",
-            "#PBS -l jobfs=2GB",
-        ]
+        job_dir = os.path.join(prj_dir,"Abundance","jobs")
+        log_dir = os.path.join(prj_dir,"Abundance","logs")
+        if config['job_manager'] in ['pbs', 'gadi']:
+            threads = config['pbs']['ncpus']
         bash_commands = [
             f"source {CONDA_PATH}/bin/activate vip",
             "header_pair_list=(",
@@ -137,8 +147,67 @@ def mapping(prj_dir, manifest, threads=4):
             # f"\tbreak",
             "done",
         ]
-        with open(job, 'w') as f:
-            f.writelines([line + "\n" for line in pbs_header] + [line + "\n" for line in bash_commands])
+        bash_commands = [x+"\n" for x in bash_commands]
+        if config['job_manager']=='pbs':
+            cluster_job_header = job_management.PBSHeader(
+                job_name=f"mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
+                ncpus=threads,
+                ngpus=0,
+                mem="120GB",
+                walltime="10:00:00",
+                mail_addr=config['pbs']['mail_addr'],
+                log_o=os.path.join(log_dir, f"{log_dir}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
+                log_e=os.path.join(log_dir, f"{log_dir}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.e"),
+            )
+            cluster_job = job_management.Job(
+                job_manager='pbs',job_header=cluster_job_header, commands=bash_commands,
+            )
+            cluster_job.save_job(job_dir=job_dir)
+        elif config['job_manager']=='gadi':
+            cluster_job_header = job_management.GadiHeader(
+                job_name=f"mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
+                ncpus=threads,
+                ngpus=0,
+                mem="120GB",
+                walltime="10:00:00",
+                mail_addr=config['pbs']['mail_addr'],
+                log_o=os.path.join(log_dir, f"{log_dir}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
+                log_e=os.path.join(log_dir, f"{log_dir}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.e"),
+                project=config['pbs']['gadi']['-P project'],
+                storage=config['pbs']['gadi']['-l storage'],
+                node_type="normalsl",
+                jobfs="2GB",
+            )
+            cluster_job = job_management.Job(
+                job_manager='gadi',job_header=cluster_job_header, commands=bash_commands,
+            )
+            cluster_job.save_job(job_dir=job_dir)
+        
+        # print(cluster_job.job_header.job_name)
+        # pbs_header = [
+        #     "#!/bin/bash",
+        #     "# Job Name:",
+        #     f"#PBS -N mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
+        #     "# Project Info:",
+        #     "#PBS -P mp96",
+        #     "#PBS -l storage=gdata/oo46+gdata/mp96",
+        #     "# Log Output:",
+        #     f"#PBS -o {logs}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o",
+        #     f"#PBS -e {logs}/mapping_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.e",
+        #     "#PBS -j oe",
+        #     "# Mailing:",
+        #     "#PBS -m abe",
+        #     "#PBS -M 379004663@qq.com",   
+        #     "# Resources Allocation:",
+        #     "#PBS -q normalsl",
+        #     "#PBS -l walltime=2:30:00",
+        #     "#PBS -l mem=120GB",
+        #     f"#PBS -l ncpus={threads}",
+        #     "#PBS -l jobfs=2GB",
+        # ]
+        # with open(job, 'w') as f:
+        #     f.writelines([line + "\n" for line in pbs_header] + [line + "\n" for line in bash_commands])
+    return 
 
 def check(prj_dir, manifest):
     manifest = pd.read_table(manifest, header=None, names=["fileHeader", "fq1", "fq2"])

@@ -260,6 +260,105 @@ prepare_databases() {
 
 }
 
+check_envs() {
+    # tool path check and env variables settings
+    if [ -f $WORKING_DIR/src/envs.py ];then
+        rm $WORKING_DIR/src/envs.py
+    fi
+    # conda path check
+    if [ -d $CONDA_PATH ];then
+        echo "CONDA_PATH = \"$CONDA_PATH\"" >> $WORKING_DIR/src/envs.py
+    fi
+    echo "INSTALLATION_PATH = \"$WORKING_DIR\"" >> $WORKING_DIR/src/envs.py
+    # main env check
+    if [ -d $CONDA_ENVS_PATH/$MAIN_ENV_NAME ]; then
+        echo -e "MAIN_ENV_NAME = \"${MAIN_ENV_NAME}\"" >> $WORKING_DIR/src/envs.py
+    else
+        echo "MAIN_ENV_NAME = " >> $WORKING_DIR/src/envs.py
+    fi
+    # CAT_pack  
+    if [ -f $WORKING_DIR/dependencies/CAT_pack/CAT_pack/CAT_pack ]; then
+        echo -e "CAT_PACK_PATH = \"${WORKING_DIR}/dependencies/CAT_pack/CAT_pack/CAT_pack\"" >> $WORKING_DIR/src/envs.py
+    else
+        echo "CAT_PACK_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # Virsorter2
+    if [ -f $CONDA_ENVS_PATH/vs2/bin/virsorter ]; then
+        echo -e "VIRSORTER2_PATH = \"${CONDA_ENVS_PATH}/vs2/bin/virsorter\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "VIRSORTER2_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # genomad
+    if [ -f $CONDA_ENVS_PATH/genomad/bin/genomad ]; then
+        echo -e "GENOMAD_PATH = \"${CONDA_ENVS_PATH}/genomad/bin/genomad\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "GENOMAD_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # viralm
+    if [ -f $WORKING_DIR/dependencies/ViraLM/viralm.py ]; then
+        echo -e "VIRALM_PATH = \"${WORKING_DIR}/dependencies/ViraLM/viralm.py\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "VIRALM_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # checkv
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv ]; then
+        echo -e "CHECKV_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "CHECKV_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # strobealign
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/strobealign ]; then
+        echo -e "STROBEALIGN_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/strobealign\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "STROBEALIGN_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # samtools
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/samtools ]; then
+        echo -e "SAMTOOLS_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/samtools\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "SAMTOOLS_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # featureCounts
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/featureCounts ]; then
+        echo -e "FEATURECOUNTS_PATH = \"$CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/featureCounts\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "FEATURECOUNTS_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # vContact3 
+    if [ -f $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/featureCounts ]; then
+        echo -e "VCONTACT3_PATH = \"$CONDA_ENVS_PATH/vcontact3/bin/vcontact3\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "VCONTACT3_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # db path check and env variables settings
+    # CAT_pack_nr_db
+    if [ -d $WORKING_DIR/dependencies/CAT_pack_nr_db ]; then
+        echo -e "CAT_PACK_DB_PATH = \"${WORKING_DIR}/dependencies/CAT_pack_nr_db\"" >> $WORKING_DIR/src/envs.py
+    else
+        echo "CAT_PACK_DB_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # genomad_db
+    if [ -d $WORKING_DIR/dependencies/genomad_db ]; then
+        echo -e "GENOMAD_DB_PATH = \"${WORKING_DIR}/dependencies/genomad_db\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "GENOMAD_DB_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # checkvdb
+    if [ -d $WORKING_DIR/dependencies/checkvdb ] && compgen -d $WORKING_DIR/dependencies/checkvdb > /dev/null; then
+        echo -e "CEHCKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/checkvdb)\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "CEHCKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
+    fi
+    # vcontact3_db
+    if [ -d $WORKING_DIR/dependencies/vcontact3_db ] && compgen -d $WORKING_DIR/dependencies/vcontact3_db > /dev/null; then
+        echo -e "VCONTACT3_DB_PATH = \"$WORKING_DIR/dependencies/vcontact3_db\"" >> $WORKING_DIR/src/envs.py
+        echo -e "VCONTACT3_DB_VERSION = \"220\"" >> $WORKING_DIR/src/envs.py
+    else 
+        echo "VCONTACT3_DB_PATH = " >> $WORKING_DIR/src/envs.py
+        echo "VCONTACT3_DB_VERSION = " >> $WORKING_DIR/src/envs.py
+    fi
+}
+
 case $1 in
     "--all")
         install_tools
@@ -271,7 +370,10 @@ case $1 in
     "--databases")
         prepare_databases
         ;;
+    "--check_envs")
+        check_envs
+        ;;
     *)
-        echo -e "options: '--tools' '--databases' '--all'"
+        echo -e "options: '--all' '--tools' '--databases' '--check_envs'"
         ;;
 esac

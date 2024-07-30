@@ -14,91 +14,110 @@ cd VirIAP/
 bash setup.sh --tools
 bash setup.sh --databases
 ```
-NOTE: Both these two steps requires internet connection, please make sure your PC/server node has the ineernet connection. The installation will take some time because there are lots of softwares and databases required, please wait atiently.
+NOTE: Both these two steps requires internet connection, please make sure your PC/server node has the internet connection. The installation will take some time because there are lots of softwares and databases required, please wait patiently.
 
-<!-- ***NOTE:***  
-The installation requires the following steps, if the installation failed, you may aslo follow these steps.  
-Prerequisites:  
-1. Install CAT from: https://github.com/MGXlab/CAT_pack
-2. Install Virsorter2 from: https://github.com/jiarong/VirSorter2
-3. Install GeNomad from: https://portal.nersc.gov/genomad/installation.html
-4. Install ViraLM from: https://github.com/ChengPENG-wolf/ViraLM
-
-Create environment for VIP:
+*(Known issue)* When installing, the pipeline will automatically setup some environmental variables in *src/envs.py*. You can also open *envs.py* with text editor to see if all the entries are filled. If not, you can try:
 ```
-conda create -n vip -c bioconda -c conda-forge seqkit checkv barrnap pandas
-conda activate vip 
+bash setup.py --check_envs
 ```
-Download necessary databases:
-```
-# CAT DB (in this pipeline, we used NR database):
-mkdir ./dependencies/CAT_pack_nr_db 
-cd ./dependencies/CAT_pack_nr_db
-wget tbb.bio.uu.nl/tina/CAT_pack_prepare/20240422_CAT_nr.tar.gz.
-tar -xvzf 20240422_CAT_nr.tar.gz
-cd ../..
-# checkv DB:
-checkv download_database ./dependencies/checkvdb
-``` -->
+to reset the environmental variables.
 
-
-## Usage:  
-### Create a project:
+## Workflow:  
+### 1. Vreate your project
+#### 1.1 Create a project:
 The pipeline takes projects as its working directory. To create a project, please use the following command:  
 ```
-python main.py -p [your_project_folder_path] create -i [path_to_your_fasta(s)_file]
+python path/to/viriap/src/main.py -p [your_project_folder_path] create -i [path_to_your_fasta(s)_file]
 ```
 ___-p/--project_dir___: search/create a project directory according to the path (default: ./)  
 ___-i/--input___: Must be specified. A file contains a list of names of fasta files; OR one or more fasta files.  
 This will create a project folder under the paht you provided. By default, it will take the current folder ("./") as the project folder.  
-__Important__: if you are not willing to use the current folder as the project folder, please specify a project path, otherwise it will make your current folder messy (with many additional project-related folders/files created).  
+*Important*: if you are not willing to use the current folder as the project folder, please specify a project path, otherwise it will make your current folder messy (with many additional project-related folders/files created).  
+
 After creating a project folder, cd to it, so that you don't need to provide the folder path every time you run a command:
 ```
 cd [your_project_folder_path]
 ```
-### Generate jobs:
 
+#### 1.2 Config your project
+After creating a project, you will see a *config.yaml* file under your project folder, it records some important information of this project. Before going into generateig jobs, you need to specify some parameters in the *config.yaml* file:  
+**For general PBS users**, please specify (keep others unchanged):  
+```  
+job_manager: pbs  
+pbs:  
+    ncpus: 32  
+    mail_addr: 'your email address for receiving the status of jobs'  
 ```
-python -p ./ main.py search --generate
+**For gadi users**, please specify (keep others unchanged):  
 ```
+job_manager: pbs  
+pbs:  
+    ncpus: 32  
+    mail_addr: 'your email address for receviing the status of jobs'  
+    gadi:  
+        -l storage: 'storage of your project'  
+        -P project: 'your project code'  
+```
+**(Optional)** You can also specify how many files to be included in a job, by specifying:  
+```
+max_batch_size: 10
+``` 
 
-### Submit jobs (optional):
-
+### 2. Identify viruses
+#### 2.1 Generate virus identification jobs
+After successfuly configured your project, you are ready to generate jobs for identifying viruses:  
 ```
-python -p ./ main.py search --submit
-```
-
-### Check complete status:
-
-```
-python -p ./ main.py check
-```
-
-### Extract putative contigs:
-
-```
-python -p ./ main.py extract
-```
-
-### Decontamination (remove rRNA):
-
-```
-python -p ./ main.py decontam
-```
-
-### Extract confirmed contigs:
-
-```
-python -p ./ main.py confirm
+python path/to/viriap/src/main.py -p ./ main.py search --generate
 ```
 
-### Merge confirmed contigs:
-
+#### 2.2 Submit jobs (manually):
+In case of using improper resoures, please double check the job headers to make sure the resources required are valid/proper, and then submit jobs manually:
+**For all PBS users**:
 ```
-python -p ./ main.py merge
+qsub path/to/your_project/jobs/job.pbs
 ```
 
+#### 2.3 Check complete status:
+```
+python path/to/viriap/src/main.py -p ./ check
+```
 
+#### 2.4 Extract putative contigs:
+```
+python path/to/viriap/src/main.py -p ./ extract
+```
+
+#### 2.5 Decontamination (remove rRNA):
+```
+python path/to/viriap/src/main.py -p ./ decontam
+```
+
+#### 2.6 Merge confirmed contigs:
+```
+python path/to/viriap/src/main.py -p ./ merge
+```
+
+#### 2.7 Deduplication:
+```
+python path/to/viriap/src/main.py -p ./ dedup
+```
+
+#### 2.8 Quality check:
+```
+python path/to/viriap/src/main.py -p ./ checkv_quality
+```
+
+#### 2.9 Make OVUs by clustering:
+```
+python path/to/viriap/src/main.py -p ./ cluster
+```
+
+### 3. Mapping & Abundance
+
+#### 3.1 Building mapping index
+```
+python path/to/viriap/src/main.py -p ./ mapping --manifest path/to/your/manifest.csv --indexing
+```
 
 ## Modules 
 

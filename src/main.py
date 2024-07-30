@@ -97,9 +97,9 @@ def main():
     if args.modules=="mapping":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.indexing==True:
-            mapping.indexing(prj_dir=project_dir, threads=proj_config["gadi"]["-l ncpus"])
+            mapping.indexing(prj_dir=project_dir, config=proj_config)
         if args.mapping==True:
-            mapping.mapping(prj_dir=project_dir, manifest=args.manifest, threads=proj_config["gadi"]["-l ncpus"])
+            mapping.mapping(prj_dir=project_dir, manifest=args.manifest, config=proj_config)
         if args.count_matrix==True:
             mapping.count_matrix(prj_dir=project_dir, manifest=args.manifest)
     if args.modules=="classify":

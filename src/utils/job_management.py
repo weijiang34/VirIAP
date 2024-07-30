@@ -515,32 +515,33 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             vlm_job.save_job(job_dir=os.path.join(project_dir,"jobs"))
 
 if __name__=="__main__":
-    PBS_header = PBSHeader(
-        job_name="test",
-        ncpus=32,
-        ngpus=0,
-        mem="64GB",
-        walltime="1:00:00",
-        mail_addr="test@test.com",
-        log_o="path",
-        log_e="path",
-    )
-    Gadi_header = GadiHeader(
-        job_name="test",
-        ncpus=32,
-        ngpus=0,
-        mem="64GB",
-        walltime="1:00:00",
-        mail_addr="test@test.com",
-        log_o="path",
-        log_e="path",
-        project="mp96",
-        storage="gdata/oo46+gdata/mp96",
-        node_type="normalsl",
-        jobfs="2GB",
-    )
+    pass
+    # PBS_header = PBSHeader(
+    #     job_name="test",
+    #     ncpus=32,
+    #     ngpus=0,
+    #     mem="64GB",
+    #     walltime="1:00:00",
+    #     mail_addr="test@test.com",
+    #     log_o="path",
+    #     log_e="path",
+    # )
+    # Gadi_header = GadiHeader(
+    #     job_name="test",
+    #     ncpus=32,
+    #     ngpus=0,
+    #     mem="64GB",
+    #     walltime="1:00:00",
+    #     mail_addr="test@test.com",
+    #     log_o="path",
+    #     log_e="path",
+    #     project="mp96",
+    #     storage="gdata/oo46+gdata/mp96",
+    #     node_type="normalsl",
+    #     jobfs="2GB",
+    # )
 
-    commands = [x+"\n" for x in ["cd ./", "echo \"hello world!\""]]
-    test_job = Job(job_header=BashHeader(job_name="test"), commands=commands)
-    test_job.save_job(path=os.path.join(os.getcwd(), f"{test_job.job_header.job_name}.pbs"))
+    # commands = [x+"\n" for x in ["cd ./", "echo \"hello world!\""]]
+    # test_job = Job(job_header=BashHeader(job_name="test"), commands=commands)
+    # test_job.save_job(path=os.path.join(os.getcwd(), f"{test_job.job_header.job_name}.pbs"))
  

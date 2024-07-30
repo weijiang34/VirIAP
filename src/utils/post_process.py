@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import envs
+from utils import job_management
 
 def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
     # pre-run check
@@ -228,71 +229,86 @@ def check_quality(prj_dir, config):
     dedup = os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta")
     quality_check_dir = os.path.join(prj_dir,'OVU','quality_check')
     quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
-    log = os.path.join(prj_dir,'OVU')
-    job = os.path.join(prj_dir,'OVU',"check_quality.pbs")
-    threads = config['gadi']['-l ncpus']
+    log_dir = os.path.join(prj_dir,'OVU')
+    job_dir = os.path.join(prj_dir,'OVU')
+    if config['job_manager'] in ['pbs', 'gadi']:
+        threads = config['pbs']['ncpus']
     if not os.path.isdir(os.path.join(prj_dir,"OVU")):
         os.makedirs(os.path.join(prj_dir,"OVU"), exist_ok=True)
-    gadi_headers = [
-        "#!/bin/bash",
-        "# Job Name:",
-        "#PBS -N check_quality",
-        "# Project Info:",
-        f"#PBS -P {config['gadi']['-P project']}",
-        f"#PBS -l storage={config['gadi']['-l storage']}",
-        "# Log Output:",
-        f"#PBS -o {log}/check_quality.o",
-        f"#PBS -e {log}/check_quality.e",
-        "#PBS -j oe",
-        "# Mailing:",
-        "#PBS -m abe",
-        f"#PBS -M {config['gadi']['-M mail_addr']}",
-        "# Resources Allocation:",
-        "#PBS -q normalsl",
-        "#PBS -l walltime=10:00:00",
-        "#PBS -l mem=64GB",
-        f"#PBS -l ncpus={threads}",
-        f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
-    ]
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}\n",
         f"checkv end_to_end {dedup} {quality_check_dir} -d {envs.CHECKV_DB_PATH} -t {threads}\n",
         f"seqkit grep -f <(awk -F \'\\t\' \'{{if ($6 == 0 && $8 == \"Not-determined\") {{next;}} print $1}}\' {quality_check_dir}/quality_summary.tsv | sed \'1d\') {dedup} > {quality_filtered_fasta}\n",
     ]
-    script = [ line+"\n" for line in (gadi_headers+bash_commands)]
-    with open(job, 'w') as f:
-        f.writelines(script)
+    if config['job_manager']=='pbs':
+        check_quality_job_header = job_management.PBSHeader(
+            job_name="check_quality",
+            ncpus=threads,
+            ngpus=0,
+            mem="64GB",
+            walltime="10:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=f"{log_dir}/check_quality.o",
+            log_e=f"{log_dir}/check_quality.e",
+        )
+        check_quality_job = job_management.Job(
+            job_manager='pbs',job_header=check_quality_job_header, commands=bash_commands,
+        )
+        check_quality_job.save_job(job_dir=job_dir)
+    elif config['job_manager']=='gadi':
+        check_quality_job_header = job_management.GadiHeader(
+            job_name="check_quality",
+            ncpus=threads,
+            ngpus=0,
+            mem="64GB",
+            walltime="10:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=f"{log_dir}/check_quality.o",
+            log_e=f"{log_dir}/check_quality.e",
+            project=config['pbs']['gadi']['-P project'],
+            storage=config['pbs']['gadi']['-l storage'],
+            node_type="normalsl",
+            jobfs="2GB",
+        )
+        check_quality_job = job_management.Job(
+            job_manager='gadi',job_header=check_quality_job_header, commands=bash_commands,
+        )
+        check_quality_job.save_job(job_dir=job_dir)
+    # gadi_headers = [
+    #     "#!/bin/bash",
+    #     "# Job Name:",
+    #     "#PBS -N check_quality",
+    #     "# Project Info:",
+    #     f"#PBS -P {config['gadi']['-P project']}",
+    #     f"#PBS -l storage={config['gadi']['-l storage']}",
+    #     "# Log Output:",
+    #     f"#PBS -o {log}/check_quality.o",
+    #     f"#PBS -e {log}/check_quality.e",
+    #     "#PBS -j oe",
+    #     "# Mailing:",
+    #     "#PBS -m abe",
+    #     f"#PBS -M {config['gadi']['-M mail_addr']}",
+    #     "# Resources Allocation:",
+    #     "#PBS -q normalsl",
+    #     "#PBS -l walltime=10:00:00",
+    #     "#PBS -l mem=64GB",
+    #     f"#PBS -l ncpus={threads}",
+    #     f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
+    # ]
+    # script = [ line+"\n" for line in (gadi_headers+bash_commands)]
+    # with open(job, 'w') as f:
+    #     f.writelines(script)
     # os.system(f"chmod +x {os.path.join(prj_dir, 'check_quality_tmp.sh')}")
     # os.system(os.path.join(prj_dir, "check_quality_tmp.sh"))
     # os.remove(os.path.join(prj_dir, "check_quality_tmp.sh"))
 
 def cluster(prj_dir, config):
-    job = os.path.join(prj_dir,"OVU","blast_cluster.pbs")
-    log = os.path.join(prj_dir,"OVU")
+    job_dir = os.path.join(prj_dir,"OVU")
+    log_dir = os.path.join(prj_dir,"OVU")
     quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
     script_path = os.path.join(envs.INSTALLATION_PATH,"src")
-
-    gadi_headers = [
-        "#!/bin/bash",
-        "# Job Name:",
-        "#PBS -N blast_cluster",
-        "# Project Info:",
-        f"#PBS -P {config['gadi']['-P project']}",
-        f"#PBS -l storage={config['gadi']['-l storage']}",
-        "# Log Output:",
-        f"#PBS -o {log}/blast_cluster.o",
-        f"#PBS -e {log}/blast_cluster.e",
-        "#PBS -j oe",
-        "# Mailing:",
-        "#PBS -m abe",
-        f"#PBS -M {config['gadi']['-M mail_addr']}",
-        "# Resources Allocation:",
-        "#PBS -q normalsl",
-        "#PBS -l walltime=10:00:00",
-        "#PBS -l mem=64GB",
-        f"#PBS -l ncpus={config['gadi']['-l ncpus']}",
-        f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
-    ]
+    if config['job_manager'] in ['pbs', 'gadi']:
+        threads = config['pbs']['ncpus']
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}",
         f"echo \"make blast db ...\"",
@@ -308,10 +324,66 @@ def cluster(prj_dir, config):
         f"seqkit grep -f <(cat {prj_dir}/OVU/filtered_clusters.tsv | cut -f1) {quality_filtered_fasta} > {prj_dir}/OVU/rep_contigs.fasta",
         f"echo \"finished\"",
     ]
-    script_lines = gadi_headers + bash_commands
-    script_lines = [x+'\n' for x in script_lines]
-    with open(job, 'w') as f:
-        f.writelines(script_lines)
+    if config['job_manager']=='pbs':
+        cluster_job_header = job_management.PBSHeader(
+            job_name="cluster",
+            ncpus=threads,
+            ngpus=0,
+            mem="64GB",
+            walltime="10:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=f"{log_dir}/cluster.o",
+            log_e=f"{log_dir}/cluster.e",
+        )
+        cluster_job = job_management.Job(
+            job_manager='pbs',job_header=cluster_job_header, commands=bash_commands,
+        )
+        cluster_job.save_job(job_dir=job_dir)
+    elif config['job_manager']=='gadi':
+        cluster_job_header = job_management.GadiHeader(
+            job_name="cluster",
+            ncpus=threads,
+            ngpus=0,
+            mem="64GB",
+            walltime="10:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=f"{log_dir}/cluster.o",
+            log_e=f"{log_dir}/cluster.e",
+            project=config['pbs']['gadi']['-P project'],
+            storage=config['pbs']['gadi']['-l storage'],
+            node_type="normalsl",
+            jobfs="2GB",
+        )
+        cluster_job = job_management.Job(
+            job_manager='gadi',job_header=cluster_job_header, commands=bash_commands,
+        )
+        cluster_job.save_job(job_dir=job_dir)
+
+    # gadi_headers = [
+    #     "#!/bin/bash",
+    #     "# Job Name:",
+    #     "#PBS -N blast_cluster",
+    #     "# Project Info:",
+    #     f"#PBS -P {config['gadi']['-P project']}",
+    #     f"#PBS -l storage={config['gadi']['-l storage']}",
+    #     "# Log Output:",
+    #     f"#PBS -o {log}/blast_cluster.o",
+    #     f"#PBS -e {log}/blast_cluster.e",
+    #     "#PBS -j oe",
+    #     "# Mailing:",
+    #     "#PBS -m abe",
+    #     f"#PBS -M {config['gadi']['-M mail_addr']}",
+    #     "# Resources Allocation:",
+    #     "#PBS -q normalsl",
+    #     "#PBS -l walltime=10:00:00",
+    #     "#PBS -l mem=64GB",
+    #     f"#PBS -l ncpus={config['gadi']['-l ncpus']}",
+    #     f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
+    # ]
+    # script_lines = gadi_headers + bash_commands
+    # script_lines = [x+'\n' for x in script_lines]
+    # with open(job, 'w') as f:
+    #     f.writelines(script_lines)
     
     return
 
