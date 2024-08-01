@@ -1,16 +1,17 @@
 import pandas as pd
 import numpy as np
 import os
-import envs
-from utils import job_management
+# import envs
+# from utils import job_management
+import glob
 
-def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
+def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_len=3000):
     # pre-run check
     files_to_check = [
         os.path.join(prj_dir,"out",f"{fileHeader}","CAT_results", f"{fileHeader}.nr.contig2classification.with_names.txt"),
         os.path.join(prj_dir,"out",f"{fileHeader}","VirSorter2_results", f"{fileHeader}-final-viral-score.tsv"),
-        os.path.join(prj_dir,"out",f"{fileHeader}", "GeNomad_results", f"{fileHeader}.contigs_summary", f"{fileHeader}.contigs_virus_summary.tsv"),
-        os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{fileHeader}.contigs_summary", f"{fileHeader}.contigs_plasmid_summary.tsv"),
+        os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_virus_summary.tsv"),
+        os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_virus_summary.tsv"),
         os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results",f"result_{fileHeader}.csv")
     ]
     for file in files_to_check:
@@ -22,10 +23,10 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
                                      f"{fileHeader}.nr.contig2classification.with_names.txt"), sep='\t', header=0).rename({"# contig":"contig"},axis=1)
     vs2 = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","VirSorter2_results",
                                      f"{fileHeader}-final-viral-score.tsv"), sep='\t', header=0)
-    gnm_v = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{fileHeader}.contigs_summary",
-                                     f"{fileHeader}.contigs_virus_summary.tsv"), sep='\t', header=0)
-    gnm_p = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{fileHeader}.contigs_summary",
-                                     f"{fileHeader}.contigs_plasmid_summary.tsv"), sep='\t', header=0)
+    gnm_v = pd.read_table(glob.glob(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"*_summary",
+                                     f"*_virus_summary.tsv"))[0], sep='\t', header=0)
+    gnm_p = pd.read_table(glob.glob(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"*_summary",
+                                     f"*_plasmid_summary.tsv"))[0], sep='\t', header=0)
     vlm = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results",f"result_{fileHeader}.csv"), sep=',', header=0)
     completeness_status = pd.read_csv(os.path.join(prj_dir, "completeness_status.csv"), sep=',', header=0, index_col=None)
     
@@ -107,12 +108,13 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, min_len=3000):
     
 
 def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=3000):
+    status = pd.read_csv(os.path.join(prj_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
     for fileHeader in fileHeader_list:
         if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"putative_contigs.fasta")):
             print(f"{fileHeader} has finished, skip.")
             continue
         else:
-            extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, min_len=min_len)
+            extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, file_path=status[status["fileHeader"]==fileHeader]["path"], min_len=min_len)
     
 def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
     
@@ -387,5 +389,12 @@ def cluster(prj_dir, config):
     
     return
 
+def find_genomad_header():
+    genomad_out_header = os.path.join("/g/data/oo46/wj6768/Healthy_Virome_HOAM_STOOL","out","HOAM22501", "GeNomad_results", "*_summary", "*_virus_summary.tsv")
+    # genomad_out_header = os.path.basename(glob.glob("/g/data/oo46/wj6768/Healthy_Virome_HOAM_STOOL/out/HOAM22501/GeNomad_results/*_summary")[0]).split()
+    print(genomad_out_header)
+    return 
+
 if __name__=="__main__":
     pass
+    # find_genomad_header()
