@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 import os
-# import envs
-# from utils import job_management
-import glob
+import envs
+from utils import job_management
 
 def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_len=3000):
     # pre-run check
@@ -11,7 +10,7 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_l
         os.path.join(prj_dir,"out",f"{fileHeader}","CAT_results", f"{fileHeader}.nr.contig2classification.with_names.txt"),
         os.path.join(prj_dir,"out",f"{fileHeader}","VirSorter2_results", f"{fileHeader}-final-viral-score.tsv"),
         os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_virus_summary.tsv"),
-        os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_virus_summary.tsv"),
+        os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_plasmid_summary.tsv"),
         os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results",f"result_{fileHeader}.csv")
     ]
     for file in files_to_check:
@@ -23,10 +22,10 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_l
                                      f"{fileHeader}.nr.contig2classification.with_names.txt"), sep='\t', header=0).rename({"# contig":"contig"},axis=1)
     vs2 = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","VirSorter2_results",
                                      f"{fileHeader}-final-viral-score.tsv"), sep='\t', header=0)
-    gnm_v = pd.read_table(glob.glob(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"*_summary",
-                                     f"*_virus_summary.tsv"))[0], sep='\t', header=0)
-    gnm_p = pd.read_table(glob.glob(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"*_summary",
-                                     f"*_plasmid_summary.tsv"))[0], sep='\t', header=0)
+    gnm_v = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_virus_summary.tsv"),
+                           sep='\t', header=0)
+    gnm_p = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","GeNomad_results",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_summary",f"{'.'.join(file_path.split('/')[-1].split('.')[:-1])}_plasmid_summary.tsv"),
+                           sep='\t', header=0)
     vlm = pd.read_table(os.path.join(prj_dir,"out",f"{fileHeader}","ViraLM_results",f"result_{fileHeader}.csv"), sep=',', header=0)
     completeness_status = pd.read_csv(os.path.join(prj_dir, "completeness_status.csv"), sep=',', header=0, index_col=None)
     
@@ -110,11 +109,12 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_l
 def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=3000):
     status = pd.read_csv(os.path.join(prj_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
     for fileHeader in fileHeader_list:
-        if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"putative_contigs.fasta")):
-            print(f"{fileHeader} has finished, skip.")
-            continue
-        else:
-            extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, file_path=status.set_index("fileHeader").loc[fileHeader,"path"], min_len=min_len)
+        # if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"putative_contigs.fasta")):
+        #     print(f"{fileHeader} has finished, skip.")
+        #     continue
+        # else:
+        extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, file_path=status.set_index("fileHeader").loc[fileHeader,"path"], min_len=min_len)
+        # break
 
     
 def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
