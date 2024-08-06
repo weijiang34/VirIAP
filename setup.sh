@@ -245,9 +245,9 @@ prepare_databases() {
     fi
     # checkvdb
     if [ -d $WORKING_DIR/dependencies/checkvdb ] && compgen -d $WORKING_DIR/dependencies/checkvdb > /dev/null; then
-        echo -e "CEHCKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/checkvdb)\"" >> $WORKING_DIR/src/envs.py
+        echo -e "CHECKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/checkvdb)\"" >> $WORKING_DIR/src/envs.py
     else 
-        echo "CEHCKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
+        echo "CHECKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
     fi
     # vcontact3_db
     if [ -d $WORKING_DIR/dependencies/vcontact3_db ] && compgen -d $WORKING_DIR/dependencies/vcontact3_db > /dev/null; then
@@ -345,9 +345,9 @@ check_envs() {
     fi
     # checkvdb
     if [ -d $WORKING_DIR/dependencies/checkvdb ] && compgen -d $WORKING_DIR/dependencies/checkvdb > /dev/null; then
-        echo -e "CEHCKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/checkvdb)\"" >> $WORKING_DIR/src/envs.py
+        echo -e "CHECKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/db)\"" >> $WORKING_DIR/src/envs.py
     else 
-        echo "CEHCKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
+        echo "CHECKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
     fi
     # vcontact3_db
     if [ -d $WORKING_DIR/dependencies/vcontact3_db ] && compgen -d $WORKING_DIR/dependencies/vcontact3_db > /dev/null; then
