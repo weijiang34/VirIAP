@@ -345,7 +345,7 @@ check_envs() {
     fi
     # checkvdb
     if [ -d $WORKING_DIR/dependencies/checkvdb ] && compgen -d $WORKING_DIR/dependencies/checkvdb > /dev/null; then
-        echo -e "CHECKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/db)\"" >> $WORKING_DIR/src/envs.py
+        echo -e "CHECKV_DB_PATH = \"$(compgen -d $WORKING_DIR/dependencies/checkvdb)\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "CHECKV_DB_PATH = " >> $WORKING_DIR/src/envs.py
     fi
