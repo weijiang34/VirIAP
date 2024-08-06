@@ -251,7 +251,7 @@ prepare_databases() {
     fi
     # vcontact3_db
     if [ -d $WORKING_DIR/dependencies/vcontact3_db ] && compgen -d $WORKING_DIR/dependencies/vcontact3_db/ > /dev/null; then
-        echo -e "VCONTACT3_DB_PATH = \"$WORKING_DIR/dependencies/vcontact3_db\"" >> $WORKING_DIR/src/envs.py
+        echo -e "VCONTACT3_DB_PATH = \"$WORKING_DIR/dependencies/vcontact3_db/\"" >> $WORKING_DIR/src/envs.py
         echo -e "VCONTACT3_DB_VERSION = \"220\"" >> $WORKING_DIR/src/envs.py
     else 
         echo "VCONTACT3_DB_PATH = " >> $WORKING_DIR/src/envs.py
