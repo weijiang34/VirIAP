@@ -11,10 +11,10 @@ install_tools() {
         echo -e "Env: '$MAIN_ENV_NAME' already exists."
     else
         echo "INFO: Creating conda env: $MAIN_ENV_NAME ..."
-        conda create -n $MAIN_ENV_NAME pandas ruamel.yaml strobealign samtools --yes
+        conda create -n $MAIN_ENV_NAME python=3.10 pandas ruamel.yaml strobealign samtools --yes
         source $CONDA_PATH/bin/activate $MAIN_ENV_NAME
         conda activate $MAIN_ENV_NAME
-        conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv --yes
+        conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv==1.0.1 --yes
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: '$MAIN_ENV_NAME' created."
         fi

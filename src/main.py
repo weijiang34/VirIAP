@@ -86,7 +86,8 @@ def main():
                 post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), threads=proj_config['pbs']["ncpus"]) # [fileHeader_list["completed"]==False]
                 post_process.extract_decontaminated_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist())
     if args.modules=="merge":
-        post_process.merge_confirmed_contigs(prj_dir=project_dir, fileHeader_list=os.listdir(os.path.join(project_dir, "out")))
+        fileHeader_list = pd.read_csv(os.path.join(project_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
+        post_process.merge_confirmed_contigs(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist())
     if args.modules=="dedup":
         post_process.dedup(prj_dir=project_dir)
     if args.modules=="check_quality":
