@@ -82,8 +82,9 @@ def main():
             post_process.extract_putative_contigs_multi_samples(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), min_len=args.min_length)
         if args.modules=="decontam":
             proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-            post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), threads=proj_config["gadi"]["-l ncpus"]) # [fileHeader_list["completed"]==False]
-            post_process.extract_decontaminated_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist())
+            if proj_config["job_manager"] in ["pbs","gadi"]:
+                post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), threads=proj_config['pbs']["ncpus"]) # [fileHeader_list["completed"]==False]
+                post_process.extract_decontaminated_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist())
     if args.modules=="merge":
         post_process.merge_confirmed_contigs(prj_dir=project_dir, fileHeader_list=os.listdir(os.path.join(project_dir, "out")))
     if args.modules=="dedup":

@@ -147,11 +147,11 @@ def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
 
 def find_rRNAs_multi_files(prj_dir, fileHeader_list, threads=32):
     for fileHeader in fileHeader_list:
-        if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"rRNAs.tsv")):
-            print(f"{fileHeader} has finished, skip.")
-            continue
-        else:
-            find_rRNAs_single_file(prj_dir=prj_dir, fileHeader=fileHeader, threads=threads)
+        # if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"rRNAs.tsv")):
+        #     print(f"{fileHeader} has finished, skip.")
+        #     continue
+        # else:
+        find_rRNAs_single_file(prj_dir=prj_dir, fileHeader=fileHeader, threads=threads)
     
 def extract_decontaminated_contigs_single_file(prj_dir, fileHeader):
     
@@ -186,11 +186,11 @@ def extract_decontaminated_contigs_single_file(prj_dir, fileHeader):
     
 def extract_decontaminated_contigs_multi_files(prj_dir, fileHeader_list):
     for fileHeader in fileHeader_list:
-        if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"decontaminated_contigs.fasta")):
-            print(f"{fileHeader} has finished, skip.")
-            continue
-        else:
-            extract_decontaminated_contigs_single_file(prj_dir=prj_dir, fileHeader=fileHeader)
+        # if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"decontaminated_contigs.fasta")):
+        #     print(f"{fileHeader} has finished, skip.")
+        #     continue
+        # else:
+        extract_decontaminated_contigs_single_file(prj_dir=prj_dir, fileHeader=fileHeader)
         
 def merge_confirmed_contigs(prj_dir, fileHeader_list):
     if not os.path.isdir(os.path.join(prj_dir,"OVU")):
