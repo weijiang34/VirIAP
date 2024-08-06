@@ -4,6 +4,7 @@ import envs
 from utils import job_management
 
 CONDA_PATH = envs.CONDA_PATH
+MAIN_ENV_NAME = envs.MAIN_ENV_NAME
 STROBEALIGN_PATH = envs.STROBEALIGN_PATH
 SAMTOOLS_PATH = envs.SAMTOOLS_PATH
 FEATURECOUNTS_PATH = envs.FEATURECOUNTS_PATH
@@ -21,7 +22,7 @@ def indexing(prj_dir, config):
     if config['job_manager'] in ['pbs', 'gadi']:
         threads = config['pbs']['ncpus']
     bash_commands = [
-        f"source {CONDA_PATH}/bin/activate vip",
+        f"source {CONDA_PATH}/bin/activate {MAIN_ENV_NAME}",
         f"cp {prj_dir}/OVU/rep_contigs.fasta {prj_dir}/Abundance/",
         f"{STROBEALIGN_PATH} --create-index -t {threads} -r 150 {fasta}",
         f"{SAMTOOLS_PATH} faidx {fasta} -o {faidx}",
@@ -123,7 +124,7 @@ def mapping(prj_dir, manifest, config):
         if config['job_manager'] in ['pbs', 'gadi']:
             threads = config['pbs']['ncpus']
         bash_commands = [
-            f"source {CONDA_PATH}/bin/activate vip",
+            f"source {CONDA_PATH}/bin/activate {MAIN_ENV_NAME}",
             "header_pair_list=(",
             "{}".format('\n'.join(f'"{item}"' for item in header_pair_list)),
             ")",
@@ -139,7 +140,7 @@ def mapping(prj_dir, manifest, config):
             f"\tcount={os.path.join(prj_dir,'Abundance', 'out')}/$header/\"$header\"_count.tsv",
             f"\tmkdir -p $out_dir",
             "\techo \"$header mapping started.\"",
-            f"\t{STROBEALIGN_PATH} --use-index $fasta -t {threads} $fq1 $fq2 | {SAMTOOLS_PATH} sort -T $out_dir -o $bam -@ {threads}",
+            f"\t{STROBEALIGN_PATH} $fasta $fq1 $fq2 -t {threads} | {SAMTOOLS_PATH} sort -T $out_dir -o $bam -@ {threads}",
             f"\t{SAMTOOLS_PATH} index $bam -@ {threads}",
             f"\t{SAMTOOLS_PATH} flagstat $bam -@ {threads} > $stat",
             f"\t{FEATURECOUNTS_PATH} -p -t contig -g contig_id -a $gtf -o $count -T {threads} $bam",

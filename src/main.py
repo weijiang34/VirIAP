@@ -5,7 +5,7 @@ import pandas as pd
 
 def main():
     pwd = os.getcwd()
-    parser = argparse.ArgumentParser(prog="VIP", description="This is a commandline software for the pipeline.")
+    parser = argparse.ArgumentParser(prog="VirIAP", description="This is a commandline software for the pipeline.")
     parser.add_argument("-p","--prj_dir", default=pwd, help="Specify your project directory. (e.g. './test')")
     parser.add_argument("--max_batch_size", type=int, default=10, help="Defines the maximum number of samples a batch job contains.")
     parser.add_argument("--dryrun", action="store_true", help="Run the commands but not generate anything. (Used for testing.)")
