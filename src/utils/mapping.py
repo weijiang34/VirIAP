@@ -21,12 +21,13 @@ def indexing(prj_dir, config):
     if config['job_manager'] in ['pbs', 'gadi']:
         threads = config['pbs']['ncpus']
     bash_commands = [
-        f"source {CONDA_PATH}/bin/activate vip\n",
-        f"cp {prj_dir}/OVU/rep_contigs.fasta {prj_dir}/Abundance/\n",
-        f"{STROBEALIGN_PATH} --create-index -t {threads} -r 150 {fasta}\n",
-        f"{SAMTOOLS_PATH} faidx {fasta} -o {faidx}\n",
-        f"awk \'BEGIN {{FS=\"\\t\"}}; {{print $1\"\\tclustering\\tcontig\\t1\\t\"$2\"\\t\"$2\"\\t+\\t1\\tcontig_id \\\"\"$1\"\\\"\"}}\' {faidx} > {gtf}\n",
+        f"source {CONDA_PATH}/bin/activate vip",
+        f"cp {prj_dir}/OVU/rep_contigs.fasta {prj_dir}/Abundance/",
+        f"{STROBEALIGN_PATH} --create-index -t {threads} -r 150 {fasta}",
+        f"{SAMTOOLS_PATH} faidx {fasta} -o {faidx}",
+        f"awk \'BEGIN {{FS=\"\\t\"}}; {{print $1\"\\tclustering\\tcontig\\t1\\t\"$2\"\\t\"$2\"\\t+\\t1\\tcontig_id \\\"\"$1\"\\\"\"}}\' {faidx} > {gtf}",
     ]
+    bash_commands = [x+"\n" for x in bash_commands]
     if config['job_manager']=='pbs':
         cluster_job_header = job_management.PBSHeader(
             job_name="indexing",

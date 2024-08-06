@@ -239,10 +239,11 @@ def check_quality(prj_dir, config):
     if not os.path.isdir(os.path.join(prj_dir,"OVU")):
         os.makedirs(os.path.join(prj_dir,"OVU"), exist_ok=True)
     bash_commands = [
-        f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}\n",
-        f"checkv end_to_end {dedup} {quality_check_dir} -d {envs.CHECKV_DB_PATH} -t {threads}\n",
-        f"seqkit grep -f <(awk -F \'\\t\' \'{{if ($6 == 0 && $8 == \"Not-determined\") {{next;}} print $1}}\' {quality_check_dir}/quality_summary.tsv | sed \'1d\') {dedup} > {quality_filtered_fasta}\n",
+        f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}",
+        f"checkv end_to_end {dedup} {quality_check_dir} -d {envs.CHECKV_DB_PATH} -t {threads}",
+        f"seqkit grep -f <(awk -F \'\\t\' \'{{if ($6 == 0 && $8 == \"Not-determined\") {{next;}} print $1}}\' {quality_check_dir}/quality_summary.tsv | sed \'1d\') {dedup} > {quality_filtered_fasta}",
     ]
+    bash_commands = [x+"\n" for x in bash_commands]
     if config['job_manager']=='pbs':
         check_quality_job_header = job_management.PBSHeader(
             job_name="check_quality",
@@ -327,6 +328,7 @@ def cluster(prj_dir, config):
         f"seqkit grep -f <(cat {prj_dir}/OVU/filtered_clusters.tsv | cut -f1) {quality_filtered_fasta} > {prj_dir}/OVU/rep_contigs.fasta",
         f"echo \"finished\"",
     ]
+    bash_commands = [x+"\n" for x in bash_commands]
     if config['job_manager']=='pbs':
         cluster_job_header = job_management.PBSHeader(
             job_name="cluster",
