@@ -6,7 +6,6 @@ Welcome to use this pipeline!
 Download this directory:
 ```
 git clone https://github.com/weijiang34/VirIAP.git
-
 ```
 Install necessary tools and databases by running: 
 ```
@@ -113,13 +112,35 @@ python path/to/viriap/src/main.py -p ./ cluster
 ```
 
 ### 3. Mapping & Abundance
-
-#### 3.1 Building mapping index
+#### 3.1 Building mapping index:
 ```
 python path/to/viriap/src/main.py -p ./ mapping --manifest path/to/your/manifest.csv --indexing
 ```
+***NOTE*** *: Please submit the jobs manually after this step was finished.*
+#### 3.2 Mapping reads to representative contigs:
+```
+python path/to/viriap/src/main.py -p ./ mapping --manifest path/to/your/manifest.csv --mapping
+```
+***NOTE*** *: Please submit the jobs manually after this step was finished.*
+#### 3.3 Calculating relative abundance metrices:
+```
+python path/to/viriap/src/main.py -p ./ mapping --manifest path/to/your/manifest.csv --count_matrixcount_matrix
+```
+Relative abundance of OVUs will be in *"all_counts.csv", "all_FPKM.csv", "all_TPM.csv"*.
 
-## Modules 
+### 4. Classification of OVUs
+#### 4.1 Classification with vContact3
+```
+python path/to/viriap/src/main.py -p ./ classify --generate_job 
+```
+***NOTE*** *: Please submit the jobs manually after this step was finished.*
+#### 4.2 Merge lineages from CAT, vContact3, and GeNomad
+```
+python path/to/viriap/src/main.py -p ./ classify --merge_lineage 
+```
+This will output a summary, with lineages, of the OVUs, named *"OVU_info.csv"* under folder *"OVU/"*.
+
+<!-- ## Modules 
 
 -p/--project_dir:
 
@@ -197,4 +218,4 @@ Built-in functions:
 - input:  
     .proj_dir/out
 - output:  
-    .proj_dir/merged_confirmed_contigs.fasta
+    .proj_dir/merged_confirmed_contigs.fasta -->
