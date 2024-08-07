@@ -3,60 +3,78 @@ import envs
 import numpy as np
 import pandas as pd
 from Bio import SeqIO
+from utils import job_management
 
 def anno_vContact3(prj_dir, config):
-    job = f"{prj_dir}/Annotation/job_vContact3.pbs"
-    log = f"{prj_dir}/Annotation"
-    threads = config['gadi']['-l ncpus']
-    gadi_headers = [
-        "#!/bin/bash",
-        "# Job Name:",
-        "#PBS -N anno_vContact3",
-        "# Project Info:",
-        f"#PBS -P {config['gadi']['-P project']}",
-        f"#PBS -l storage={config['gadi']['-l storage']}",
-        "# Log Output:",
-        f"#PBS -o {log}/anno_vContact3.o",
-        f"#PBS -e {log}/anno_vContact3.e",
-        "#PBS -j oe",
-        "# Mailing:",
-        "#PBS -m abe",
-        f"#PBS -M {config['gadi']['-M mail_addr']}",
-        "# Resources Allocation:",
-        "#PBS -q normalsl",
-        f"#PBS -l walltime={config['gadi']['-l walltime']}",
-        f"#PBS -l mem={config['gadi']['-l mem']}",
-        f"#PBS -l ncpus={threads}",
-        f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
-    ]
+    os.makedirs(os.path.join(prj_dir,"Classification"), exist_ok=True)
+    job_dir = f"{prj_dir}/Classification"
+    log_dir = f"{prj_dir}/Classification"
+    threads = config['pbs']['ncpus']
+
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate vcontact3",
-        f"{envs.VCONTACT3_PATH} run --nucleotide {prj_dir}/OVU/rep_contigs.fasta --output {prj_dir}/Annotation/anno_vcontact3 --db-domain \"prokaryotes\" --db-version {envs.VCONTACT3_DB_VERSION} --db-path {envs.VCONTACT3_DB_PATH} -t {threads}", # -e {{cytoscape,d3js,tree,pyupset,profiles}}
+        f"{envs.VCONTACT3_PATH} run --nucleotide {prj_dir}/OVU/rep_contigs.fasta --output {prj_dir}/Classification/anno_vcontact3 --db-domain \"prokaryotes\" --db-version {envs.VCONTACT3_DB_VERSION} --db-path {envs.VCONTACT3_DB_PATH} -t {threads}", # -e {{cytoscape,d3js,tree,pyupset,profiles}}
     ]
-    script_lines = gadi_headers + bash_commands
-    script_lines = [x+'\n' for x in script_lines]
-    with open(job, 'w') as f:
-        f.writelines(script_lines)
+    bash_commands = [x+"\n" for x in bash_commands]
+    if config['job_manager']=='pbs':
+        cluster_job_header = job_management.PBSHeader(
+            job_name="classify_vContact3",
+            ncpus=threads,
+            ngpus=0,
+            mem="32GB",
+            walltime="12:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=os.path.join(log_dir, f"{log_dir}/classify_vContact3.o"),
+            log_e=os.path.join(log_dir, f"{log_dir}/classify_vContact3.e"),
+        )
+        cluster_job = job_management.Job(
+            job_manager='pbs',job_header=cluster_job_header, commands=bash_commands,
+        )
+        cluster_job.save_job(job_dir=job_dir)
+    elif config['job_manager']=='gadi':
+        cluster_job_header = job_management.GadiHeader(
+            job_name=f"classify_vContact3",
+            ncpus=threads,
+            ngpus=0,
+            mem="32GB",
+            walltime="12:00:00",
+            mail_addr=config['pbs']['mail_addr'],
+            log_o=os.path.join(log_dir, f"{log_dir}/classify_vContact3.o"),
+            log_e=os.path.join(log_dir, f"{log_dir}/classify_vContact3.e"),
+            project=config['pbs']['gadi']['-P project'],
+            storage=config['pbs']['gadi']['-l storage'],
+            node_type="normalsl",
+            jobfs="2GB",
+        )
+        cluster_job = job_management.Job(
+            job_manager='gadi',job_header=cluster_job_header, commands=bash_commands,
+        )
+        cluster_job.save_job(job_dir=job_dir)
+
     return
 
 def summarise_OVUs(prj_dir):
     # include CAT and genomad annotations
-    def include_CAT_genomad(filtered_clusters_path):
+    def include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path):
         ovu = pd.read_table(filtered_clusters_path, sep='\t', header=None, names=["representative_contig", "contigs_in_cluster"])
         ovu["OVU"] = [f"OVU_{x}" for x in range(ovu.shape[0])]
         ovu["fileHeader"] = ovu["representative_contig"].str.split("_").apply(lambda x: '_'.join(x[:-2]))
         ovu["contig"] = ovu["representative_contig"].str.split("_").apply(lambda x: '_'.join([x[-2], x[-1]]))
         ovu["cluster_size"] = ovu["contigs_in_cluster"].str.split(",").apply(len)
         ovu = ovu.sort_values(by="representative_contig", ascending=True)
+        status = pd.read_csv(os.path.join(prj_dir,"completeness_status.csv"), header=0)
         ovu_fileHeaders = []
         for idx, fileHeader in enumerate(ovu["fileHeader"].unique().tolist()):
             print(idx, fileHeader)
             cat_out = pd.read_table(
-                f"../out/{fileHeader}/CAT_results/{fileHeader}.nr.contig2classification.with_names.txt",
+                os.path.join(prj_dir,"out",fileHeader,"CAT_results",f"{fileHeader}.nr.contig2classification.with_names.txt"),
+                # f"../out/{fileHeader}/CAT_results/{fileHeader}.nr.contig2classification.with_names.txt",
                 header=0, sep='\t', index_col=None
             ).rename({"# contig":"contig"}, axis=1)
+            gnm_fileHeader = '.'.join(status[status["fileHeader"]==fileHeader]['path'].iloc[0].split('/')[-1].split('.')[:-1])
             gnm_out = pd.read_table(
-                f"../out/{fileHeader}/GeNomad_results/final.contigs_annotate/final.contigs_taxonomy.tsv",
+                os.path.join(prj_dir,"out",fileHeader,"GeNomad_results",f"{gnm_fileHeader}_annotate",f"{gnm_fileHeader}_taxonomy.tsv"),
+                # f"../out/{fileHeader}/GeNomad_results/final.contigs_annotate/final.contigs_taxonomy.tsv",
                 header=0, sep='\t', index_col=None
             ).rename({"seq_name":"contig", "lineage":"genomad_lineage"}, axis=1)
             ovu_current_fileHeader = ovu[ovu["fileHeader"]==fileHeader]
@@ -72,12 +90,12 @@ def summarise_OVUs(prj_dir):
         tmp_df = ovu_annotations["contigs_in_cluster"]
         ovu_annotations = ovu_annotations.drop("contigs_in_cluster", axis=1)
         ovu_annotations["contigs_in_cluster"] = tmp_df
-        ovu_annotations.to_csv("OVUs_info_tmp.csv", index=None)
+        ovu_annotations.to_csv(OVU_info_tmp_path, index=None)
         return ovu_annotations
     # include vcontact3 annotations
-    def incldue_vContact3(OVUs_info_tmp_path, reps_lineage_path):
-        ovu_annotations = pd.read_csv(OVUs_info_tmp_path, header=0)
-        vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Annotation","anno_vcontact3","final_assignments.csv"), header=0)
+    def incldue_vContact3(OVU_info_tmp_path, reps_lineage_path):
+        ovu_annotations = pd.read_csv(OVU_info_tmp_path, header=0)
+        vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Classification","anno_vcontact3","final_assignments.csv"), header=0)
         vcontact3 = vcontact3_summary[vcontact3_summary["Reference"]==False].drop("index",axis=1).reset_index(drop=True).rename({
             "realm (prediction)": "realm",
             "phylum (prediction)": "phylum",
@@ -168,12 +186,12 @@ def summarise_OVUs(prj_dir):
         return OVU_info
 
     filtered_clusters_path = os.path.join(prj_dir,"OVU","filtered_clusters.tsv")
-    OVUs_info_tmp_path = os.path.join(prj_dir,"OVU","OVUs_info_tmp.csv")
+    OVU_info_tmp_path = os.path.join(prj_dir,"OVU","OVU_info_tmp.csv")
     reps_lineage_path = os.path.join(prj_dir,"OVU","reps_lineage.csv")
     OVU_info_path = os.path.join(prj_dir,"OVU","OVU_info.csv")
 
-    include_CAT_genomad(filtered_clusters_path)
-    incldue_vContact3(OVUs_info_tmp_path=OVUs_info_tmp_path, reps_lineage_path=reps_lineage_path)
+    include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
+    incldue_vContact3(OVU_info_tmp_path=OVU_info_tmp_path, reps_lineage_path=reps_lineage_path)
     
     reps_lineage = pd.read_csv(reps_lineage_path, header=0)
     reps_lineage["lineage"] = reps_lineage.apply(lambda x: ";".join(merge_lineage([to_lineage(str(x["CAT_lineage"]),"CAT"),to_lineage(str(x["vContact3_lineage"]),"vContact3"),to_lineage(str(x["GeNomad_lineage"]),"GeNomad")]).values()), axis=1)
@@ -183,11 +201,12 @@ def summarise_OVUs(prj_dir):
     
     OVU_info = length_info(
         OVU_info=OVU_info, 
-        quality_filtered_contigs_path=os.path.join(prj_dir,"OVU","quality_filtered_contigs.fasta")
+        quality_filtered_contigs_path=os.path.join(prj_dir,"OVU","quality_filtered_viral_contigs.fasta")
     )
     
     OVU_info.to_csv(OVU_info_path,index=None)
-    os.remove(OVUs_info_tmp_path)
+
+    os.remove(OVU_info_tmp_path)
     
     return
 

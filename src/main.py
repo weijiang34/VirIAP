@@ -48,6 +48,9 @@ def main():
     mapping_option.add_argument("--count_matrix", action="store_true", help="Count number of reads and calculate FPKM and TPM.")
 
     subparser_classify = subparsers.add_parser("classify", help="Classify OVU representatives and merge lineage results from CAT, GeNomad and vContact3.")
+    calssification_option = subparser_classify.add_mutually_exclusive_group(required=True)
+    calssification_option.add_argument("--generate_job", action="store_true", help="generate classiification job to run vContact3.")
+    calssification_option.add_argument("--merge_lineage", action="store_true", help="Merge lineage info from CAT, GeNomad, and vContact3.")
 
     args = parser.parse_args()
 
@@ -105,9 +108,12 @@ def main():
         if args.count_matrix==True:
             mapping.count_matrix(prj_dir=project_dir, manifest=args.manifest)
     if args.modules=="classify":
+        os.makedirs(os.path.join(project_dir,"Classification"), exist_ok=True)
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-        classify.anno_vContact3(prj_dir=project_dir, config=proj_config)
-        classify.summarise_OVUs(prj_dir=project_dir)
+        if args.generate_job==True:
+            classify.anno_vContact3(prj_dir=project_dir, config=proj_config)
+        if args.merge_lineage==True:
+            classify.summarise_OVUs(prj_dir=project_dir)
 
     
 

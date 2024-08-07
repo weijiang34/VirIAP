@@ -68,13 +68,15 @@ def parse_input(proj_dir, input):
 def make_sample_dirs(proj_dir):
     df = pd.read_csv(os.path.join(proj_dir,"completeness_status.csv"), header=0, index_col=0, sep=',')
     fileHeader_list = df["fileHeader"].to_list()
+    os.makedirs(os.path.join(proj_dir,"OVU"), exist_ok=True)
+    os.makedirs(os.path.join(proj_dir,"Abundance"), exist_ok=True)
+    os.makedirs(os.path.join(proj_dir,"Classification"), exist_ok=True)
     for fileHeader in fileHeader_list:
         os.makedirs(os.path.join(proj_dir,"out",fileHeader,"CAT_results"), exist_ok=True)
         os.makedirs(os.path.join(proj_dir,"out",fileHeader,"VirSorter2_results"), exist_ok=True)
         os.makedirs(os.path.join(proj_dir,"out",fileHeader,"GeNomad_results"), exist_ok=True)
         os.makedirs(os.path.join(proj_dir,"out",fileHeader,"ViraLM_results"), exist_ok=True)
-        os.makedirs(os.path.join(proj_dir,"OVU"), exist_ok=True)
-        os.makedirs(os.path.join(proj_dir,"Abundance"), exist_ok=True)
+         
         
 if __name__=="__main__":
     pass
