@@ -95,7 +95,7 @@ def summarise_OVUs(prj_dir):
     # include vcontact3 annotations
     def incldue_vContact3(OVU_info_tmp_path, reps_lineage_path):
         ovu_annotations = pd.read_csv(OVU_info_tmp_path, header=0)
-        vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Classification","anno_vcontact3","final_assignments.csv"), header=0)
+        vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Classification","anno_vcontact3","final_assignments.csv"), header=0, dtype='str')
         vcontact3 = vcontact3_summary[vcontact3_summary["Reference"]==False].drop("index",axis=1).reset_index(drop=True).rename({
             "realm (prediction)": "realm",
             "phylum (prediction)": "phylum",
@@ -113,12 +113,17 @@ def summarise_OVUs(prj_dir):
             "GeNomad_lineage": ovu_annotations["genomad_lineage"],
             "contigs_in_cluster": ovu_annotations["contigs_in_cluster"]
         })
+        
         reps_lineage["CAT_lineage"] = reps_lineage["CAT_lineage"].apply(lambda x: ";".join(["" if value in [None, "nan", "no support"] else value for value in str(x).split(";")]))
+        # print(reps_lineage["CAT_lineage"])
         reps_lineage["CAT_lineage"] = reps_lineage["CAT_lineage"].apply(lambda x: ";".join([value.replace("*","") for value in str(x).split(";")]))
+        # print(reps_lineage["CAT_lineage"])
         reps_lineage["CAT_lineage"] = reps_lineage["CAT_lineage"].apply(lambda x: ";".join([""]*7 if "Viruses" not in str(x).split(";") else str(x).split(";")))
+        # print(reps_lineage["CAT_lineage"])
         reps_lineage["vContact3_lineage"] = reps_lineage["vContact3_lineage"].apply(lambda x: ";".join(["" if (value in [None, "nan", "no support", "No Realm", "No prediction"]) or ("novel" in value) else value for value in str(x).split(";")]))
         reps_lineage["vContact3_lineage"] = reps_lineage["vContact3_lineage"].apply(lambda x: ";".join([value.split("|")[0] for value in str(x).split(";")]))
         reps_lineage["GeNomad_lineage"] = reps_lineage["GeNomad_lineage"].apply(lambda x: ";".join(["" if value in [None, "nan", "no support"] else value for value in str(x).split(";")]))
+        # print(reps_lineage["CAT_lineage"])
         reps_lineage.to_csv(reps_lineage_path, index=None)
         return reps_lineage
 
