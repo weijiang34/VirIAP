@@ -85,7 +85,7 @@ def summarise_OVUs(prj_dir):
         ovu_annotations = ovu_annotations.set_index(["OVU", "representative_contig", "cluster_size"]).reset_index()
         ovu_annotations = ovu_annotations.sort_values(by="cluster_size", ascending=False).reset_index(drop=True)
         ovu_annotations = ovu_annotations.astype({"superkingdom":str,"phylum":str,"class":str,"order":str,"family":str,"genus":str,"species":str})
-        ovu_annotations["cat_lineage"] = ovu_annotations.apply(lambda row: ';'.join([row["superkingdom"],row["phylum"],row["class"],row["order"],row["family"],row["genus"],row["species"]]), axis=1)
+        ovu_annotations["cat_lineage"] = ovu_annotations.apply(lambda row: ';'.join([row["superkingdom"].split(':')[0],row["phylum"].split(':')[0],row["class"].split(':')[0],row["order"].split(':')[0],row["family"].split(':')[0],row["genus"].split(':')[0],row["species"].split(':')[0]]), axis=1)
         ovu_annotations = ovu_annotations.drop(["classification","superkingdom","phylum","class","order","family","genus","species"], axis=1)
         tmp_df = ovu_annotations["contigs_in_cluster"]
         ovu_annotations = ovu_annotations.drop("contigs_in_cluster", axis=1)
@@ -108,7 +108,7 @@ def summarise_OVUs(prj_dir):
             "OVU": ovu_annotations["OVU"],
             "representative_contig": ovu_annotations["representative_contig"],
             "cluster_size": ovu_annotations["cluster_size"],
-            "CAT_lineage": ovu_annotations["cat_lineage"].str.replace("no support",""),
+            "CAT_lineage": ovu_annotations["cat_lineage"],#.str.replace("no support",""),
             "vContact3_lineage": vcontact3.apply(lambda x: ";".join([str(x["realm"]),str(x["phylum"]),str(x["class"]),str(x["order"]),str(x["family"]),str(x["genus"])]), axis=1),
             "GeNomad_lineage": ovu_annotations["genomad_lineage"],
             "contigs_in_cluster": ovu_annotations["contigs_in_cluster"]
