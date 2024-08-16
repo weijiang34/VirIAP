@@ -33,13 +33,15 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_l
     cat = cat[cat["classification"]=="taxid assigned"]
     cat.columns = ["cat_" + x for x in cat.columns.values.tolist()]
     cat = cat.rename({"cat_contig":"seq_name", "cat_superkingdom":"cat_category"}, axis=1)
+    cat["cat_category"] = cat["cat_category"].str.split(":", expand=True)[0]
     cat = cat.loc[:,["seq_name","cat_category"]].reset_index(drop=True)
     
     if vs2.shape[0]>0:
-        vs2["completeness"] = vs2["seqname"].str.split("||", expand=True)[1]
-        vs2["seqname"] = vs2["seqname"].str.split("||", expand=True)[0]
+        vs2["completeness"] = vs2["seqname"].str.split("\|\|", expand=True)[1]
+        vs2["seqname"] = vs2["seqname"].str.split("\|\|", expand=True)[0]
         vs2["category"] = "Viruses"
         vs2.columns = ["vs2_" + x for x in vs2.columns.values.tolist()]
+        
         vs2 = vs2.rename({"vs2_seqname":"seq_name"}, axis=1)
         vs2 = vs2[vs2["vs2_max_score_group"]!="RNA"]
         vs2 = vs2.loc[:, ["seq_name", "vs2_category"]].reset_index(drop=True)
@@ -114,7 +116,7 @@ def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=300
         #     continue
         # else:
         extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, file_path=status.set_index("fileHeader").loc[fileHeader,"path"], min_len=min_len, num_tools=num_tools)
-        # break
+        break
 
     
 def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
