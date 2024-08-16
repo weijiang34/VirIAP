@@ -116,7 +116,7 @@ def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=300
         #     continue
         # else:
         extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, file_path=status.set_index("fileHeader").loc[fileHeader,"path"], min_len=min_len, num_tools=num_tools)
-        break
+        # break
 
     
 def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
