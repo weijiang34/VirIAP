@@ -39,4 +39,7 @@ def check_complete_multifile(prj_dir: str):
     status = status.apply(lambda x: check_complete_singlefile(x, prj_dir=prj_dir), axis=1)
     status = status[["path","fileHeader","completed","CAT","VirSorter2","GeNomad","ViraLM","putative","decontamination","confirmed"]]
     status.to_csv(os.path.join(prj_dir, "completeness_status.csv"), sep=',', index=None)
+    out = status[["completed","CAT","VirSorter2","GeNomad","ViraLM","putative","decontamination","confirmed"]].agg('count')
+    out = out.apply(lambda x: str(x)+f"/{status.shape[0]}")
+    # print(out)
 

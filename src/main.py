@@ -31,7 +31,7 @@ def main():
 
     subparser_extract = subparsers.add_parser("extract", help="Extract putative contigs.")
     subparser_extract.add_argument("-l", "--min_length", type=int, default=3000, help="Minimum length for putative contigs.")
-    subparser_extract.add_argument("-c", "--num_confirmed_tools", type=int, default=2, help="Minimum number of tools to confirm.")
+    subparser_extract.add_argument("-c", "--num_tools", type=int, default=2, help="Minimum number of tools to confirm.")
 
     subparser_filter = subparsers.add_parser("decontam", help="Decontamination: filter out rRNAs from bac,euk,arc,mito.")
     # subparser_confirm = subparsers.add_parser("confirm", help="Output confirmed viral contigs.")
@@ -82,7 +82,7 @@ def main():
     if args.modules in ["extract","decontam","confirm"]:
         fileHeader_list = pd.read_csv(os.path.join(project_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
         if args.modules=="extract":
-            post_process.extract_putative_contigs_multi_samples(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), min_len=args.min_length)
+            post_process.extract_putative_contigs_multi_samples(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), min_len=args.min_length, num_tools=args.num_tools)
         if args.modules=="decontam":
             proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
             if proj_config["job_manager"] in ["pbs","gadi"]:

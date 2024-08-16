@@ -4,7 +4,7 @@ import os
 import envs
 from utils import job_management
 
-def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_len=3000):
+def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_len=3000, num_tools=2):
     # pre-run check
     files_to_check = [
         os.path.join(prj_dir,"out",f"{fileHeader}","CAT_results", f"{fileHeader}.nr.contig2classification.with_names.txt"),
@@ -89,7 +89,7 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_l
         count = row[row=="Viruses"].count()
         return count
     putative_min_len["v_count"] = putative_min_len.apply(CountVirus, axis=1)
-    putative_min_len = putative_min_len[((putative_min_len["v_count"]>=2) | (putative_min_len["cat_category"]=="Viruses")) & (putative_min_len["gnm_category"]!="Plasmids")].reset_index().astype({"length":int}).astype(str)
+    putative_min_len = putative_min_len[((putative_min_len["v_count"]>=num_tools) | (putative_min_len["cat_category"]=="Viruses")) & (putative_min_len["gnm_category"]!="Plasmids")].reset_index().astype({"length":int}).astype(str)
     putative_min_len.to_csv(os.path.join(prj_dir,"out",fileHeader,"putative_summary.csv"), index=None)
     os.remove(os.path.join(prj_dir,"out",fileHeader,"putative_summary_tmp.csv"))
     os.remove(os.path.join(prj_dir, "out", fileHeader, "putative_contigs_length_info_tmp.csv"))
@@ -106,14 +106,14 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, file_path, min_l
     os.remove(os.path.join(prj_dir, "extract_putative_contigs_tmp.sh"))
     
 
-def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=3000):
+def extract_putative_contigs_multi_samples(prj_dir, fileHeader_list, min_len=3000, num_tools=2):
     status = pd.read_csv(os.path.join(prj_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
     for fileHeader in fileHeader_list:
         # if os.path.isfile(os.path.join(prj_dir,"out",fileHeader,"putative_contigs.fasta")):
         #     print(f"{fileHeader} has finished, skip.")
         #     continue
         # else:
-        extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, file_path=status.set_index("fileHeader").loc[fileHeader,"path"], min_len=min_len)
+        extract_putative_contigs_single_sample(prj_dir=prj_dir, fileHeader=fileHeader, file_path=status.set_index("fileHeader").loc[fileHeader,"path"], min_len=min_len, num_tools=num_tools)
         # break
 
     
