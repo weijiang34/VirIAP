@@ -39,6 +39,7 @@ def main():
     subparser_dedup = subparsers.add_parser("dedup", help="Remove exactly the same contigs.")
     subparser_quality_check = subparsers.add_parser("check_quality", help="Use CheckV to check the quality of merged viral contigs.")
     subparser_cluster = subparsers.add_parser("cluster", help="Use ANI and AF results from blast all against all to cluster viral contigs.")
+    subparser_cluster.add_argument("--no_checkv", action="store_true", help="If specified, will use un-checkv-checked contigs for clustering instead of using checkv-checked contigs.")
     
     subparser_mapping = subparsers.add_parser("mapping", help="Map clean paired-end reads to representative contigs using strobealign, and calculate relative abundance.")
     subparser_mapping.add_argument("--manifest", required=True, type=str, help="a three column csv file, with columns: fileHeader,fq1,fq2")
@@ -98,7 +99,10 @@ def main():
         post_process.check_quality(prj_dir=project_dir, config=proj_config)
     if args.modules=="cluster":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-        post_process.cluster(prj_dir=project_dir, config=proj_config)
+        if args.no_checkv:
+            post_process.cluster(prj_dir=project_dir, config=proj_config, checked="unchecked")
+        else:
+            post_process.cluster(prj_dir=project_dir, config=proj_config, checked="checked")
     if args.modules=="mapping":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.indexing==True:

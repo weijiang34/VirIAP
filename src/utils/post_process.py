@@ -127,6 +127,7 @@ def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
     ]
     for file in files_to_check:
         if not os.path.exists(file):
+            print(f"{file} does not exist, exit.")
             return
     
     if os.path.exists(os.path.join(prj_dir, "out", fileHeader, "rRNAs.tsv")):
@@ -144,7 +145,7 @@ def find_rRNAs_single_file(prj_dir, fileHeader, threads=32):
     os.system(f"chmod +x {os.path.join(prj_dir, 'find_rRNAs_tmp.sh')}")
     os.system(os.path.join(prj_dir, "find_rRNAs_tmp.sh"))
     os.remove(os.path.join(prj_dir, "find_rRNAs_tmp.sh"))
-    if os.path.exists(f"{os.path.join(prj_dir, 'out', fileHeader, 'putative_contigs.fasta')}.fai"):
+    if os.path.exists(f"{os.path.join(prj_dir, 'out', fileHeader, 'putative_contigs.fasta.fai')}"):
         os.remove(f"{os.path.join(prj_dir, 'out', fileHeader, 'putative_contigs.fasta.fai')}")
 
 def find_rRNAs_multi_files(prj_dir, fileHeader_list, threads=32):
@@ -280,54 +281,32 @@ def check_quality(prj_dir, config):
             job_manager='gadi',job_header=check_quality_job_header, commands=bash_commands,
         )
         check_quality_job.save_job(job_dir=job_dir)
-    # gadi_headers = [
-    #     "#!/bin/bash",
-    #     "# Job Name:",
-    #     "#PBS -N check_quality",
-    #     "# Project Info:",
-    #     f"#PBS -P {config['gadi']['-P project']}",
-    #     f"#PBS -l storage={config['gadi']['-l storage']}",
-    #     "# Log Output:",
-    #     f"#PBS -o {log}/check_quality.o",
-    #     f"#PBS -e {log}/check_quality.e",
-    #     "#PBS -j oe",
-    #     "# Mailing:",
-    #     "#PBS -m abe",
-    #     f"#PBS -M {config['gadi']['-M mail_addr']}",
-    #     "# Resources Allocation:",
-    #     "#PBS -q normalsl",
-    #     "#PBS -l walltime=10:00:00",
-    #     "#PBS -l mem=64GB",
-    #     f"#PBS -l ncpus={threads}",
-    #     f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
-    # ]
-    # script = [ line+"\n" for line in (gadi_headers+bash_commands)]
-    # with open(job, 'w') as f:
-    #     f.writelines(script)
-    # os.system(f"chmod +x {os.path.join(prj_dir, 'check_quality_tmp.sh')}")
-    # os.system(os.path.join(prj_dir, "check_quality_tmp.sh"))
-    # os.remove(os.path.join(prj_dir, "check_quality_tmp.sh"))
 
-def cluster(prj_dir, config):
+
+def cluster(prj_dir, config, checked="checked"):
     job_dir = os.path.join(prj_dir,"OVU")
     log_dir = os.path.join(prj_dir,"OVU")
-    quality_filtered_fasta = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
+    options = {
+        "checked": os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta'),
+        "unchecked": os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta"),
+    }
+    fasta_file = options[checked]
     script_path = os.path.join(envs.INSTALLATION_PATH,"src")
     if config['job_manager'] in ['pbs', 'gadi']:
         threads = config['pbs']['ncpus']
     bash_commands = [
         f"source {envs.CONDA_PATH}/bin/activate {envs.MAIN_ENV_NAME}",
         f"echo \"make blast db ...\"",
-        f"makeblastdb -in {quality_filtered_fasta} -out {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -dbtype nucl",
+        f"makeblastdb -in {fasta_file} -out {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -dbtype nucl",
         f"echo \"blasting ...\"",
-        f"blastn -query {quality_filtered_fasta} -db {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -out {prj_dir}/OVU/filtered_blast.tsv -outfmt '6 std qlen slen' -max_target_seqs 25000 -perc_identity 90",
+        f"blastn -query {fasta_file} -db {prj_dir}/OVU/blastdb_for_anicluster/blastdb_for_anicluster -out {prj_dir}/OVU/filtered_blast.tsv -outfmt '6 std qlen slen' -max_target_seqs 25000 -perc_identity 90",
         f"echo \"blast finished\"",
         f"python {os.path.join(script_path, 'blastani.py')} -i {prj_dir}/OVU/filtered_blast.tsv -o {prj_dir}/OVU/filtered_ani.tsv",
         f"echo \"compute ANI finished\"",
-        f"python {os.path.join(script_path, 'cluster.py')} --fna {quality_filtered_fasta} --ani {prj_dir}/OVU/filtered_ani.tsv --out {prj_dir}/OVU/filtered_clusters.tsv --min_ani 95 --min_qcov 0 --min_tcov 85",
+        f"python {os.path.join(script_path, 'cluster.py')} --fna {fasta_file} --ani {prj_dir}/OVU/filtered_ani.tsv --out {prj_dir}/OVU/filtered_clusters.tsv --min_ani 95 --min_qcov 0 --min_tcov 85",
         f"echo \"cluster finished\"",
         f"echo \"extract representatives ...\"",
-        f"seqkit grep -f <(cat {prj_dir}/OVU/filtered_clusters.tsv | cut -f1) {quality_filtered_fasta} > {prj_dir}/OVU/rep_contigs.fasta",
+        f"seqkit grep -f <(cat {prj_dir}/OVU/filtered_clusters.tsv | cut -f1) {fasta_file} > {prj_dir}/OVU/rep_contigs.fasta",
         f"echo \"finished\"",
     ]
     bash_commands = [x+"\n" for x in bash_commands]
@@ -365,40 +344,14 @@ def cluster(prj_dir, config):
             job_manager='gadi',job_header=cluster_job_header, commands=bash_commands,
         )
         cluster_job.save_job(job_dir=job_dir)
-
-    # gadi_headers = [
-    #     "#!/bin/bash",
-    #     "# Job Name:",
-    #     "#PBS -N blast_cluster",
-    #     "# Project Info:",
-    #     f"#PBS -P {config['gadi']['-P project']}",
-    #     f"#PBS -l storage={config['gadi']['-l storage']}",
-    #     "# Log Output:",
-    #     f"#PBS -o {log}/blast_cluster.o",
-    #     f"#PBS -e {log}/blast_cluster.e",
-    #     "#PBS -j oe",
-    #     "# Mailing:",
-    #     "#PBS -m abe",
-    #     f"#PBS -M {config['gadi']['-M mail_addr']}",
-    #     "# Resources Allocation:",
-    #     "#PBS -q normalsl",
-    #     "#PBS -l walltime=10:00:00",
-    #     "#PBS -l mem=64GB",
-    #     f"#PBS -l ncpus={config['gadi']['-l ncpus']}",
-    #     f"#PBS -l jobfs={config['gadi']['-l jobfs']}",
-    # ]
-    # script_lines = gadi_headers + bash_commands
-    # script_lines = [x+'\n' for x in script_lines]
-    # with open(job, 'w') as f:
-    #     f.writelines(script_lines)
     
     return
 
-def find_genomad_header():
-    genomad_out_header = os.path.join("/g/data/oo46/wj6768/Healthy_Virome_HOAM_STOOL","out","HOAM22501", "GeNomad_results", "*_summary", "*_virus_summary.tsv")
-    # genomad_out_header = os.path.basename(glob.glob("/g/data/oo46/wj6768/Healthy_Virome_HOAM_STOOL/out/HOAM22501/GeNomad_results/*_summary")[0]).split()
-    print(genomad_out_header)
-    return 
+# def find_genomad_header():
+#     genomad_out_header = os.path.join("/g/data/oo46/wj6768/Healthy_Virome_HOAM_STOOL","out","HOAM22501", "GeNomad_results", "*_summary", "*_virus_summary.tsv")
+#     # genomad_out_header = os.path.basename(glob.glob("/g/data/oo46/wj6768/Healthy_Virome_HOAM_STOOL/out/HOAM22501/GeNomad_results/*_summary")[0]).split()
+#     print(genomad_out_header)
+#     return 
 
 if __name__=="__main__":
     pass
