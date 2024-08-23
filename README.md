@@ -85,6 +85,9 @@ python path/to/viriap/src/main.py -p ./ check
 ```
 python path/to/viriap/src/main.py -p ./ extract
 ```
+Parameters for filtering:  
+-l defallt: 3000, minimum length for putative contigs.  
+-c default: 2, minimum number of tools to confirm a viral contig.  
 
 #### 2.5 Decontamination (remove rRNA):
 ```
@@ -110,6 +113,7 @@ python path/to/viriap/src/main.py -p ./ checkv_quality
 ```
 python path/to/viriap/src/main.py -p ./ cluster
 ```
+*If you find there are only small amount of viral contigs detected, you may use --no_checkv option to directly clustering un-checkved contigs.*
 
 ### 3. Mapping & Abundance
 #### 3.1 Building mapping index:
@@ -138,6 +142,11 @@ python path/to/viriap/src/main.py -p ./ classify --generate_job
 ```
 python path/to/viriap/src/main.py -p ./ classify --merge_lineage 
 ```
+optional parameter:  
+*--include ; used together with --merge_lineage, select one or more from [CAT, VCT, GNM], split with ','. If not specified, will use: ```--include CAT,VCT,GNM``` by default.*  
+The order of tool names determines priority, the former the higher, meaning it will consider the first tools annotation as a base reference and expand lineages as detailed (to a lower rank) as possible according to the following tools classification.  
+If you only wish to use one of the tools classification lineage (e.g. VCT), please specify as this: ```--include VCT```
+
 This will output a summary, with lineages, of the OVUs, named *"OVU_info.csv"* under folder *"OVU/"*.
 
 <!-- ## Modules 

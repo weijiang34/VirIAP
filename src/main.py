@@ -2,6 +2,7 @@ import os
 import argparse
 from utils import create, config, job_management, gadi_job, check_completeness, post_process, mapping, classify
 import pandas as pd
+import shutil
 
 def main():
     pwd = os.getcwd()
@@ -30,8 +31,8 @@ def main():
     subparser_check = subparsers.add_parser("check", help ="Check completeness status of all samples.")
 
     subparser_extract = subparsers.add_parser("extract", help="Extract putative contigs.")
-    subparser_extract.add_argument("-l", "--min_length", type=int, default=3000, help="Minimum length for putative contigs.")
-    subparser_extract.add_argument("-c", "--num_tools", type=int, default=2, help="Minimum number of tools to confirm.")
+    subparser_extract.add_argument("-l", "--min_length", type=int, default=3000, help="Minimum length for putative contigs. default: 3000")
+    subparser_extract.add_argument("-c", "--num_tools", type=int, default=2, help="Minimum number of tools to confirm. default: 2")
 
     subparser_filter = subparsers.add_parser("decontam", help="Decontamination: filter out rRNAs from bac,euk,arc,mito.")
     # subparser_confirm = subparsers.add_parser("confirm", help="Output confirmed viral contigs.")
@@ -52,6 +53,7 @@ def main():
     calssification_option = subparser_classify.add_mutually_exclusive_group(required=True)
     calssification_option.add_argument("--generate_job", action="store_true", help="generate classiification job to run vContact3.")
     calssification_option.add_argument("--merge_lineage", action="store_true", help="Merge lineage info from CAT, GeNomad, and vContact3.")
+    subparser_classify.add_argument("--include", default='CAT,VCT,GNM', help="Used with --merge_lineage, to specify which combinations of tools' annotation to be used for merging lineage (tool options: 'CAT', 'VCT', 'GNM'; use ',' to split). Default: 'CAT,VCT,GNM'")
 
     args = parser.parse_args()
 
@@ -100,9 +102,8 @@ def main():
     if args.modules=="cluster":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.no_checkv:
-            post_process.cluster(prj_dir=project_dir, config=proj_config, checked="unchecked")
-        else:
-            post_process.cluster(prj_dir=project_dir, config=proj_config, checked="checked")
+            shutil.copy(os.path.join(project_dir,"OVU","merged_decontaminated_contigs_dedup.fasta"), os.path.join(os.path.join(project_dir,"OVU","quality_filtered_viral_contigs.fasta")))
+        post_process.cluster(prj_dir=project_dir, config=proj_config)
     if args.modules=="mapping":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.indexing==True:
@@ -117,7 +118,7 @@ def main():
         if args.generate_job==True:
             classify.anno_vContact3(prj_dir=project_dir, config=proj_config)
         if args.merge_lineage==True:
-            classify.summarise_OVUs(prj_dir=project_dir)
+            classify.summarise_OVUs(prj_dir=project_dir, include=args.include.split(','))
 
     
 

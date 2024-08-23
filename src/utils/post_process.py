@@ -283,14 +283,14 @@ def check_quality(prj_dir, config):
         check_quality_job.save_job(job_dir=job_dir)
 
 
-def cluster(prj_dir, config, checked="checked"):
+def cluster(prj_dir, config):
     job_dir = os.path.join(prj_dir,"OVU")
     log_dir = os.path.join(prj_dir,"OVU")
     options = {
         "checked": os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta'),
         "unchecked": os.path.join(prj_dir,"OVU","merged_decontaminated_contigs_dedup.fasta"),
     }
-    fasta_file = options[checked]
+    fasta_file = os.path.join(prj_dir,'OVU','quality_filtered_viral_contigs.fasta')
     script_path = os.path.join(envs.INSTALLATION_PATH,"src")
     if config['job_manager'] in ['pbs', 'gadi']:
         threads = config['pbs']['ncpus']

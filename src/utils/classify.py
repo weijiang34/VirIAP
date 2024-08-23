@@ -53,7 +53,7 @@ def anno_vContact3(prj_dir, config):
 
     return
 
-def summarise_OVUs(prj_dir):
+def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
     # include CAT and genomad annotations
     def include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path):
         ovu = pd.read_table(filtered_clusters_path, sep='\t', header=None, names=["representative_contig", "contigs_in_cluster"])
@@ -95,8 +95,9 @@ def summarise_OVUs(prj_dir):
     # include vcontact3 annotations
     def incldue_vContact3(OVU_info_tmp_path, reps_lineage_path):
         ovu_annotations = pd.read_csv(OVU_info_tmp_path, header=0)
-        vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Classification","anno_vcontact3","final_assignments.csv"), header=0).astype({"family (prediction)":"str"})
+        vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Classification","anno_vcontact3","final_assignments.csv"), header=0).fillna("").astype({"family (prediction)":"str"})
         vcontact3 = vcontact3_summary[vcontact3_summary["Reference"]==False].drop("index",axis=1).reset_index(drop=True).rename({
+            "GenomeName":"representative_contig",
             "realm (prediction)": "realm",
             "phylum (prediction)": "phylum",
             "class (prediction)": "class",
@@ -104,16 +105,19 @@ def summarise_OVUs(prj_dir):
             "family (prediction)": "family",
             "genus (prediction)": "genus",
         },axis=1)
-        # print(vcontact3)
+        vcontact3["vContact3_lineage"] = vcontact3.apply(lambda row: ";".join([row["realm"], row["phylum"], row["class"], row["order"], row["family"], row["genus"]]), axis=1)
+
         reps_lineage = pd.DataFrame({
             "OVU": ovu_annotations["OVU"],
             "representative_contig": ovu_annotations["representative_contig"],
             "cluster_size": ovu_annotations["cluster_size"],
             "CAT_lineage": ovu_annotations["cat_lineage"],#.str.replace("no support",""),
-            "vContact3_lineage": vcontact3.apply(lambda x: ";".join([str(x["realm"]),str(x["phylum"]),str(x["class"]),str(x["order"]),str(x["family"]),str(x["genus"])]), axis=1),
+            # "vContact3_lineage": vcontact3.apply(lambda x: ";".join([str(x["realm"]),str(x["phylum"]),str(x["class"]),str(x["order"]),str(x["family"]),str(x["genus"])]), axis=1),
             "GeNomad_lineage": ovu_annotations["genomad_lineage"],
             "contigs_in_cluster": ovu_annotations["contigs_in_cluster"]
         })
+        reps_lineage = pd.merge(reps_lineage, vcontact3.loc[:, ["representative_contig", "vContact3_lineage"]], how='left', on='representative_contig')
+        reps_lineage = reps_lineage.loc[:,["OVU", "representative_contig","cluster_size","CAT_lineage","vContact3_lineage","GeNomad_lineage","contigs_in_cluster"]]
         
         reps_lineage["CAT_lineage"] = reps_lineage["CAT_lineage"].apply(lambda x: ";".join(["" if value in [None, "nan", "no support"] else value for value in str(x).split(";")]))
         # print(reps_lineage["CAT_lineage"])
@@ -202,7 +206,10 @@ def summarise_OVUs(prj_dir):
     incldue_vContact3(OVU_info_tmp_path=OVU_info_tmp_path, reps_lineage_path=reps_lineage_path)
     
     reps_lineage = pd.read_csv(reps_lineage_path, header=0)
-    reps_lineage["lineage"] = reps_lineage.apply(lambda x: ";".join(merge_lineage([to_lineage(str(x["CAT_lineage"]),"CAT"),to_lineage(str(x["vContact3_lineage"]),"vContact3"),to_lineage(str(x["GeNomad_lineage"]),"GeNomad")]).values()), axis=1)
+    tool_name_map = {"CAT":"CAT", "VCT":"vContact3", "GNM":"GeNomad"}
+    # lineage_list = [to_lineage(str(x[tool_name_map[tool]+"_lineage"])) for tool in include]
+    # reps_lineage["lineage"] = reps_lineage.apply(lambda x: ";".join(merge_lineage([to_lineage(str(x["CAT_lineage"]),"CAT"),to_lineage(str(x["vContact3_lineage"]),"vContact3"),to_lineage(str(x["GeNomad_lineage"]),"GeNomad")]).values()), axis=1)
+    reps_lineage["lineage"] = reps_lineage.apply(lambda x: ";".join(merge_lineage([to_lineage(str(x[tool_name_map[tool]+"_lineage"]), tool_name_map[tool]) for tool in include]).values()), axis=1)
     reps_lineage.to_csv(reps_lineage_path, index=None)
 
     OVU_info = reps_lineage.drop(["CAT_lineage","vContact3_lineage","GeNomad_lineage"],axis=1).loc[:,["OVU","representative_contig","cluster_size","lineage","contigs_in_cluster"]]
