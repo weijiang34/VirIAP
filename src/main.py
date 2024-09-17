@@ -55,6 +55,9 @@ def main():
     calssification_option.add_argument("--merge_lineage", action="store_true", help="Merge lineage info from CAT, GeNomad, and vContact3.")
     subparser_classify.add_argument("--include", default='CAT,VCT,GNM', help="Used with --merge_lineage, to specify which combinations of tools' annotation to be used for merging lineage (tool options: 'CAT', 'VCT', 'GNM'; use ',' to split). Default: 'CAT,VCT,GNM'")
 
+    subparser_utils = subparsers.add_parser("utils", help="Some useful functions for processing pipeline results.")
+    subparser_utils.add_argument("--rank_level_abundance", action="store_true", help="Save level abundances according to OVU_info and all_TPM")
+
     args = parser.parse_args()
 
     project_dir = os.path.abspath(args.prj_dir)
@@ -119,7 +122,14 @@ def main():
             classify.anno_vContact3(prj_dir=project_dir, config=proj_config)
         if args.merge_lineage==True:
             classify.summarise_OVUs(prj_dir=project_dir, include=args.include.split(','))
-
+    if args.modules=="utils":
+        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        if args.rank_level_abundance==True:
+            classify.save_rank_level_relative_abundance_TPM(
+                OVU_info_path=os.path.join(project_dir,"OVU","OVU_info.csv"), 
+                all_TPM_path=os.path.join(project_dir,"Abundance","all_TPM.csv"), 
+                relative_abundance_path=os.path.join(project_dir,"Abundance","relative_abundance.xlsx")
+            )
     
 
 if __name__ == "__main__":

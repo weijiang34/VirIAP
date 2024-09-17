@@ -145,7 +145,7 @@ python path/to/viriap/src/main.py -p ./ classify --merge_lineage
 optional parameter:  
 *--include ; used together with --merge_lineage, select one or more from [CAT, VCT, GNM], split with ','. If not specified, will use: ```--include CAT,VCT,GNM``` by default.*  
 The order of tool names determines priority, the former the higher, meaning it will consider the first tools annotation as a base reference and expand lineages as detailed (to a lower rank) as possible according to the following tools classification.  
-If you only wish to use one of the tools classification lineage (e.g. VCT), please specify as this: ```--include VCT```
+If you only wish to use one of the tools classification lineage (e.g. VCT), please specify as this: ```--include VCT```. However, it's recommmended to use all the three annotations (especially CAT), and just put the preffered tool at the first place. (e.g. ```--include VCT,CAT,GNM```)
 
 This will output a summary, with lineages, of the OVUs, named *"OVU_info.csv"* under folder *"OVU/"*.
 

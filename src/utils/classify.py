@@ -95,17 +95,42 @@ def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
     # include vcontact3 annotations
     def incldue_vContact3(OVU_info_tmp_path, reps_lineage_path):
         ovu_annotations = pd.read_csv(OVU_info_tmp_path, header=0)
-        vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Classification","anno_vcontact3","final_assignments.csv"), header=0).fillna("").astype({"family (prediction)":"str"})
-        vcontact3 = vcontact3_summary[vcontact3_summary["Reference"]==False].drop("index",axis=1).reset_index(drop=True).rename({
-            "GenomeName":"representative_contig",
-            "realm (prediction)": "realm",
-            "phylum (prediction)": "phylum",
-            "class (prediction)": "class",
-            "order (prediction)": "order",
-            "family (prediction)": "family",
-            "genus (prediction)": "genus",
-        },axis=1)
-        vcontact3["vContact3_lineage"] = vcontact3.apply(lambda row: ";".join([row["realm"], row["phylum"], row["class"], row["order"], row["family"], row["genus"]]), axis=1)
+        # vcontact3_summary = pd.read_csv(os.path.join(prj_dir,"Classification","anno_vcontact3","final_assignments.csv"), header=0).fillna("").astype({"family (prediction)":"str"})
+        # vcontact3 = vcontact3_summary[vcontact3_summary["Reference"]==False].drop("index",axis=1).reset_index(drop=True).rename({
+        #     "GenomeName":"representative_contig",
+        #     "realm (prediction)": "realm",
+        #     "phylum (prediction)": "phylum",
+        #     "class (prediction)": "class",
+        #     "order (prediction)": "order",
+        #     "family (prediction)": "family",
+        #     "genus (prediction)": "genus",
+        # },axis=1)
+        vcontact3 = pd.DataFrame({
+            "index":[],
+            "representative_contig":[],
+            "RefSeqID":[],
+            "Proteins":[],
+            "Reference":[],
+            "Size (Kb)":[],
+            "realm (Reference)":[],
+            "realm":[],
+            "phylum (Reference)":[],
+            "phylum":[],
+            "class (Reference)":[],
+            "class":[],
+            "order (Reference)":[],
+            "order":[],
+            "family (Reference)":[],
+            "family":[],
+            "subfamily (Reference)":[],
+            "subfamily":[],
+            "genus (Reference)":[],
+            "genus":[],
+            "network":[],
+        })
+        
+        # vcontact3["vContact3_lineage"] = vcontact3.apply(lambda row: ";".join([row["realm"], row["phylum"], row["class"], row["order"], row["family"], row["genus"]]), axis=1)
+        vcontact3["vContact3_lineage"] = vcontact3.apply(lambda row: "", axis=1)
 
         reps_lineage = pd.DataFrame({
             "OVU": ovu_annotations["OVU"],
@@ -202,7 +227,7 @@ def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
     reps_lineage_path = os.path.join(prj_dir,"OVU","reps_lineage.csv")
     OVU_info_path = os.path.join(prj_dir,"OVU","OVU_info.csv")
 
-    include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
+    # include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
     incldue_vContact3(OVU_info_tmp_path=OVU_info_tmp_path, reps_lineage_path=reps_lineage_path)
     
     reps_lineage = pd.read_csv(reps_lineage_path, header=0)
@@ -221,9 +246,33 @@ def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
     
     OVU_info.to_csv(OVU_info_path,index=None)
 
-    os.remove(OVU_info_tmp_path)
+    # os.remove(OVU_info_tmp_path)
     
     return
+
+def save_rank_level_relative_abundance_TPM(OVU_info_path, all_TPM_path, relative_abundance_path):
+        # save rank level TPMs for OVUs to excel
+        OVU_info = pd.read_csv(OVU_info_path, header=0)
+        all_TPM = pd.read_csv(all_TPM_path, header=0).drop(["Chr","Start","End","Strand","Length"], axis=1).rename({"contig": "representative_contig"},axis=1)
+        relative_abundance = pd.DataFrame({
+            "OVU": OVU_info["OVU"],
+            "representative_contig": OVU_info["representative_contig"],
+            "cluster_size": OVU_info["cluster_size"],
+            "phylum": OVU_info["lineage"].str.split(";",expand=True)[0].replace("","unclassified/unassigned"),
+            "class": OVU_info["lineage"].str.split(";",expand=True)[1].replace("","unclassified/unassigned"),
+            "order": OVU_info["lineage"].str.split(";",expand=True)[2].replace("","unclassified/unassigned"),
+            "family": OVU_info["lineage"].str.split(";",expand=True)[3].replace("","unclassified/unassigned"),
+            "genus": OVU_info["lineage"].str.split(";",expand=True)[4].replace("","unclassified/unassigned"),
+            "species": OVU_info["lineage"].str.split(";",expand=True)[5].replace("","unclassified/unassigned"),
+        })
+        relative_abundance = pd.merge(left=relative_abundance, right=all_TPM, how='left', on='representative_contig').drop(["OVU","representative_contig","cluster_size"], axis=1)
+        with pd.ExcelWriter(relative_abundance_path, mode='w') as writer:
+            ranks = relative_abundance.columns[:6]
+            for rank in ranks.tolist():
+                rank_level_relative_abundance = relative_abundance.drop(ranks.drop(rank), axis=1).groupby(rank).agg('sum')
+                rank_level_relative_abundance.to_excel(writer, sheet_name=rank, engine='openpyxl')
+
+        return
 
 if __name__=='__main__':
     pass
