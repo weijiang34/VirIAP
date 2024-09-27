@@ -164,23 +164,21 @@ def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
         current_lineage = {"phylum":"","class":"","order":"","family":"","genus":"","species":""}
 
         def find_lowest_valid_rank(lineage):
-            for idx, key in enumerate(reversed(list(lineage.keys()))):
+            for key in reversed(list(lineage.keys())):
                 if lineage[key] in ["", None, "nan", "no support"]:
                     continue
                 else:
                     return key
-            return key
-
-        def fill_lineage(lineage, template):
-            for rank in ranks[ranks.index(find_lowest_valid_rank(lineage)):]:
-                if rank in template.keys():
-                    lineage[rank] = template[rank]
-                else: lineage[rank] = ""
-            return lineage
+            return ''
 
         for lineage in lineage_list:
-            if find_lowest_valid_rank(current_lineage)=="phylum" or lineage[find_lowest_valid_rank(current_lineage)]==current_lineage[find_lowest_valid_rank(current_lineage)]:
-                current_lineage = fill_lineage(current_lineage, lineage)
+            if find_lowest_valid_rank(current_lineage)=='':
+                current_lineage = lineage
+            elif lineage[find_lowest_valid_rank(current_lineage)]==current_lineage[find_lowest_valid_rank(current_lineage)]:
+                for rank in ranks[ranks.index(find_lowest_valid_rank(current_lineage))+1:]:
+                    if rank in lineage.keys():
+                        current_lineage[rank] = lineage[rank]
+                    else: current_lineage[rank] = ""
             else:
                 continue
         return current_lineage
@@ -227,7 +225,7 @@ def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
     reps_lineage_path = os.path.join(prj_dir,"OVU","reps_lineage.csv")
     OVU_info_path = os.path.join(prj_dir,"OVU","OVU_info.csv")
 
-    # include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
+    include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
     incldue_vContact3(OVU_info_tmp_path=OVU_info_tmp_path, reps_lineage_path=reps_lineage_path)
     
     reps_lineage = pd.read_csv(reps_lineage_path, header=0)
