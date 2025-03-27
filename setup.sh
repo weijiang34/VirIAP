@@ -14,7 +14,7 @@ install_tools() {
         conda create -n $MAIN_ENV_NAME python=3.10 pandas ruamel.yaml --yes # strobealign samtools
         source $CONDA_PATH/bin/activate $MAIN_ENV_NAME
         conda activate $MAIN_ENV_NAME
-        conda install -c bioconda -c conda-forge strobealign samtools --yes
+        conda install -c bioconda -c conda-forge strobealign samtools prodigal --yes
         conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv==1.0.1 --yes
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: '$MAIN_ENV_NAME' created."

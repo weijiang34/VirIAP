@@ -22,6 +22,7 @@ def main():
 
     subparser_create = subparsers.add_parser("create", help="Create a project under [-p/--porject_dir]")
     subparser_create.add_argument("-i","--input", nargs="+", action="extend", help="A file contains a list of absolute paths to fasta files; OR one or more fasta files")
+    subparser_create.add_argument("-f","--force", action='store_true', help="Forcely recreate the project if it already exists.")
     
     subparser_search = subparsers.add_parser("search", help="A submodule which generate/submit executable job files;")
     search_option = subparser_search.add_mutually_exclusive_group(required=True)
@@ -69,7 +70,7 @@ def main():
         return
     # Begin execution
     if args.modules=="create":
-        create.create_project(project_dir)
+        create.create_project(project_dir, force=args.force)
         create.parse_input(project_dir, args.input)
         create.make_sample_dirs(project_dir)
         check_completeness.check_complete_multifile(prj_dir=project_dir)

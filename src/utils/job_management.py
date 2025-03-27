@@ -103,7 +103,6 @@ def generate_CAT_commands(job_header, out_dir, file_list):
         f"source {envs.CONDA_PATH}/bin/activate {os.path.join(envs.CONDA_PATH, 'envs', envs.MAIN_ENV_NAME)}\n",
         f'threads={job_header.ncpus}',
         f'CAT_dbPath={envs.CAT_PACK_DB_PATH}', # parameter:
-        '',
         "file_list=(",
         "{}".format('\n'.join(f'"{item}"' for item in file_list)),
         ")",
@@ -150,8 +149,6 @@ def generate_VS2_commands(job_header, out_dir, file_list):
     commands = [
         f"source {envs.CONDA_PATH}/bin/activate vs2\n",
         f'threads={job_header.ncpus}',
-        '',
-        ' ',
         "file_list=(",
         "{}".format('\n'.join(f'"{item}"' for item in file_list)),
         ")",
@@ -182,9 +179,6 @@ def generate_GNM_commands(job_header, out_dir, file_list):
         f"source {envs.CONDA_PATH}/bin/activate genomad\n",
         f'threads={job_header.ncpus}',
         f'GeNomad_dbPath={envs.GENOMAD_DB_PATH}', # parameter:
-        '',
-        # 'source /g/data1b/oo46/wj6768/miniconda3/bin/activate /g/data1b/oo46/wj6768/miniconda3/envs/genomad',
-        ' ',
         "file_list=(",
         "{}".format('\n'.join(f'"{item}"' for item in file_list)),
         ")",
@@ -217,9 +211,6 @@ def generate_VLM_commands(job_header, out_dir, file_list):
         f"source {envs.CONDA_PATH}/bin/activate viralm\n",
         f'threads={job_header.ncpus}',
         f'ViraLMPath={os.path.dirname(envs.VIRALM_PATH)}',
-        '',
-        # 'source /g/data1b/oo46/wj6768/miniconda3/bin/activate /g/data1b/oo46/wj6768/miniconda3/envs/viralm',
-        ' ',
         "file_list=(",
         "{}".format('\n'.join(f'"{item}"' for item in file_list)),
         ")",

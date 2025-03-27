@@ -2,7 +2,7 @@ import os
 from utils import config
 import pandas as pd
 
-def create_project(proj_dir):
+def create_project(proj_dir, force=False):
     # initialize
     if not os.path.exists(proj_dir):
         print(f"Creating project: {proj_dir}")
@@ -30,8 +30,10 @@ def create_project(proj_dir):
         project_completeness["logs"] = True
     else:
         os.makedirs(os.path.join(proj_dir, "logs"))
-        
-    if os.path.exists(os.path.join(proj_dir, "config.yaml")):
+    
+    if force==True:
+        config.init_project_config(os.path.join(proj_dir, "config.yaml"))
+    elif os.path.exists(os.path.join(proj_dir, "config.yaml")):
         project_completeness["config.yaml"] = True
     else:
         config.init_project_config(os.path.join(proj_dir, "config.yaml"))
