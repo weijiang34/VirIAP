@@ -11,6 +11,8 @@ def init_project_config(path):
         "job_manager": "pbs",
         "pbs": {
             "ncpus": 32,
+            "ngpus": 1,
+            "mem": "128GB",
             "mail_addr": "",
             "gadi": {
                 "-l storage": "",

@@ -44,6 +44,7 @@ def main():
     
     subparser_mapping = subparsers.add_parser("mapping", help="Map clean paired-end reads to representative contigs using strobealign, and calculate relative abundance.")
     subparser_mapping.add_argument("--manifest", required=True, type=str, help="a three column csv file, with columns: fileHeader,fq1,fq2")
+    subparser_mapping.add_argument("--subject", required=True, default='contig', help="Specify mapping reads to contigs or genes.")
     mapping_option = subparser_mapping.add_mutually_exclusive_group(required=True)
     mapping_option.add_argument("--indexing", action="store_true", help="Generate jobs for building strobealign index with representative viral contigs.")
     mapping_option.add_argument("--mapping", action="store_true", help="Generate jobs for mapping batches of samples to the representatives.")
@@ -110,11 +111,11 @@ def main():
     if args.modules=="mapping":
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.indexing==True:
-            mapping.indexing(prj_dir=project_dir, config=proj_config)
+            mapping.indexing(prj_dir=project_dir, config=proj_config, subject=args.subject)
         if args.mapping==True:
-            mapping.mapping(prj_dir=project_dir, manifest=args.manifest, config=proj_config)
+            mapping.mapping(prj_dir=project_dir, manifest=args.manifest, config=proj_config, subject=args.subject)
         if args.count_matrix==True:
-            mapping.count_matrix(prj_dir=project_dir, manifest=args.manifest)
+            mapping.count_matrix(prj_dir=project_dir, manifest=args.manifest, subject=args.subject)
     if args.modules=="classify":
         os.makedirs(os.path.join(project_dir,"Classification"), exist_ok=True)
         proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))

@@ -17,12 +17,12 @@ NOTE: Both these two steps requires internet connection, please make sure your P
 
 *(Known issue)* When installing, the pipeline will automatically setup some environmental variables in *src/envs.py*. You can also open *envs.py* with text editor to see if all the entries are filled. If not, you can try:
 ```
-bash setup.py --check_envs
+bash setup.sh --check_envs
 ```
 to reset the environmental variables.
 
 ## Workflow:  
-### 1. Vreate your project
+### 1. Create your project
 #### 1.1 Create a project:
 The pipeline takes projects as its working directory. To create a project, please use the following command:  
 ```
@@ -30,7 +30,7 @@ python path/to/viriap/src/main.py -p [your_project_folder_path] create -i [path_
 ```
 ___-p/--project_dir___: search/create a project directory according to the path (default: ./)  
 ___-i/--input___: Must be specified. A file contains a list of names of fasta files; OR one or more fasta files.  
-This will create a project folder under the paht you provided. By default, it will take the current folder ("./") as the project folder.  
+This will create a project folder under the path you provided. By default, it will take the current folder ("./") as the project folder.  
 *Important*: if you are not willing to use the current folder as the project folder, please specify a project path, otherwise it will make your current folder messy (with many additional project-related folders/files created).  
 
 After creating a project folder, cd to it, so that you don't need to provide the folder path every time you run a command:

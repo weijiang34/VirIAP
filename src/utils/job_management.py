@@ -100,6 +100,7 @@ class Job():
 
 def generate_CAT_commands(job_header, out_dir, file_list):
     commands = [
+        f"source {envs.CONDA_PATH}/bin/activate {os.path.join(envs.CONDA_PATH, 'envs', envs.MAIN_ENV_NAME)}\n",
         f'threads={job_header.ncpus}',
         f'CAT_dbPath={envs.CAT_PACK_DB_PATH}', # parameter:
         '',
@@ -332,7 +333,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
                 job_name=f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
                 ncpus=config["pbs"]["ncpus"],
                 ngpus=0,
-                mem="192GB",
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -353,7 +354,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
                 job_name=f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
                 ncpus=config["pbs"]["ncpus"],
                 ngpus=0,
-                mem=f"128GB",
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -374,7 +375,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
                 job_name=f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
                 ncpus=config["pbs"]["ncpus"],
                 ngpus=0,
-                mem="128GB",
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -393,9 +394,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # VLM
             vlm_job_header = PBSHeader(
                 job_name=f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=16,
-                ngpus=1,
-                mem="64GB",
+                ncpus=config['pbs']['ncpus'],
+                ngpus=config['pbs']['ngpus'],
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="12:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -418,7 +419,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
                 job_name=f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
                 ncpus=config["pbs"]["ncpus"],
                 ngpus=0,
-                mem="192GB",
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -443,7 +444,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
                 job_name=f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
                 ncpus=config["pbs"]["ncpus"],
                 ngpus=0,
-                mem=f"128GB",
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -468,7 +469,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
                 job_name=f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
                 ncpus=config["pbs"]["ncpus"],
                 ngpus=0,
-                mem="128GB",
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -491,9 +492,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # VLM
             vlm_job_header = GadiHeader(
                 job_name=f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=16,
-                ngpus=1,
-                mem="64GB",
+                ncpus=config['pbs']['ncpus'],
+                ngpus=config['pbs']['ngpus'],
+                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="12:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),

@@ -11,9 +11,10 @@ install_tools() {
         echo -e "Env: '$MAIN_ENV_NAME' already exists."
     else
         echo "INFO: Creating conda env: $MAIN_ENV_NAME ..."
-        conda create -n $MAIN_ENV_NAME python=3.10 pandas ruamel.yaml strobealign samtools --yes
+        conda create -n $MAIN_ENV_NAME python=3.10 pandas ruamel.yaml --yes # strobealign samtools
         source $CONDA_PATH/bin/activate $MAIN_ENV_NAME
         conda activate $MAIN_ENV_NAME
+        conda install -c bioconda -c conda-forge strobealign samtools --yes
         conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv==1.0.1 --yes
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: '$MAIN_ENV_NAME' created."
@@ -24,10 +25,13 @@ install_tools() {
     # CAT
     echo "INFO: [1/5] Installing CAT_pack ..."
     if [ -d $WORKING_DIR/dependencies/CAT_pack ]; then
-        rm -rf $WORKING_DIR/dependencies/CAT_pack
+        echo "INFO: CAT_pack already exists."
+        # rm -rf $WORKING_DIR/dependencies/CAT_pack
+    else
+        cd $WORKING_DIR/dependencies
+        git clone https://github.com/MGXlab/CAT_pack.git
     fi 
-    cd $WORKING_DIR/dependencies
-    git clone https://github.com/MGXlab/CAT_pack.git
+
     # VirSorter2
     echo "INFO: [2/5] Installing Virsorter2 ..."
     if conda info --envs | grep -q -w "vs2"; then
@@ -74,7 +78,7 @@ install_tools() {
         echo -e "\tEnv: 'vcontact3' already exists."
     else
         echo -e "\tEnv: 'vcontact3' not existed, creating..."
-        conda create -n vcontact3 bioconda::vcontact3 --yes
+        conda create -n vcontact3 -c bioconda -c conda-forge vcontact3 --yes
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: 'vcontact3' created."
         fi
@@ -152,7 +156,7 @@ install_tools() {
 
 prepare_databases() {
     # checkv
-    echo -e "Preparing checkv db ..."
+    echo -e "[INFO]: Preparing checkv db ..."
     if [ ! -d $WORKING_DIR/dependencies/checkvdb ]; then
         mkdir $WORKING_DIR/dependencies/checkvdb
         $CONDA_ENVS_PATH/$MAIN_ENV_NAME/bin/checkv download_database $WORKING_DIR/dependencies/checkvdb/
@@ -160,17 +164,17 @@ prepare_databases() {
         echo -e "\tcheckv db exists."
     fi
     # CAT_pack nr
-    echo -e "Preparing CAT_pack_nr_db ..."
+    echo -e "[INFO]: Preparing CAT_pack_nr_db ..."
     if [ ! -d $WORKING_DIR/dependencies/CAT_pack_nr_db ]; then
         mkdir $WORKING_DIR/dependencies/CAT_pack_nr_db
         cd $WORKING_DIR/dependencies/CAT_pack_nr_db
-        wget -c tbb.bio.uu.nl/tina/CAT_pack_prepare/20240422_CAT_nr.tar.gz
-        tar -xvzf 20240422_CAT_nr.tar.gz
+        wget -c https://tbb.bio.uu.nl/tina/CAT_pack_prepare/20241212_CAT_nr.tar.gz
+        tar -xvzf 20241212_CAT_nr.tar.gz
     else
         echo -e "\tCAT_pack_nr_db exists."
     fi
     # vs2 db
-    echo -e "Preparing vs2_db ..."
+    echo -e "[INFO]: Preparing vs2_db ..."
     if [ ! -d $WORKING_DIR/dependencies/vs2_db ]; then
         if conda info --envs | grep -q -w "vs2"; then
             cd $WORKING_DIR/dependencies
@@ -184,7 +188,7 @@ prepare_databases() {
         echo -e "\tvs2_db exists."
     fi
     # genomad db
-    echo -e "Preparing genomad db ..."
+    echo -e "[INFO]: Preparing genomad db ..."
     if [ ! -d $WORKING_DIR/dependencies/genomad_db ]; then
         if conda info --envs | grep -q -w "genomad"; then
             source $CONDA_PATH/bin/activate genomad
@@ -197,7 +201,7 @@ prepare_databases() {
         echo -e "\tgenomad db exists."
     fi
     # viralm model
-    echo -e "Preparing viralm model ..."
+    echo -e "[INFO]: Preparing viralm model ..."
     if [ ! -d $WORKING_DIR/dependencies/ViraLM/model ]; then
         if conda info --envs | grep -q -w "viralm"; then
             cd $WORKING_DIR/dependencies/ViraLM
@@ -214,7 +218,7 @@ prepare_databases() {
         echo -e "\tviralm model exists."
     fi
     # vcontact3 db
-    echo -e "Preparing vContact3_db ..."
+    echo -e "[INFO]: Preparing vContact3_db ..."
     if [ ! -d $WORKING_DIR/dependencies/vcontact3_db ]; then
         if conda info --envs | grep -q -w "vcontact3"; then
             cd $WORKING_DIR/dependencies
@@ -363,6 +367,7 @@ case $1 in
     "--all")
         install_tools
         prepare_databases
+        check_envs
         ;;
     "--tools")
         install_tools
