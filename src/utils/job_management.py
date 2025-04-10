@@ -2,7 +2,7 @@ import os
 import envs
 import pandas as pd
 
-job_managers = ["pbs","gadi"]
+job_managers = ["pbs","gadi","bash"]
 
 class BashHeader():
     def __init__(self, job_name, ncpus) -> None:
@@ -260,7 +260,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # CAT
             cat_job_header = BashHeader(
                 job_name=f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
             )
             cat_job = Job(
                 job_manager=config["job_manager"],
@@ -275,7 +275,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # VS2
             vs2_job_header = BashHeader(
                 job_name=f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
             )
             vs2_job = Job(
                 job_manager=config["job_manager"],
@@ -290,7 +290,7 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # GNM
             gnm_job_header = BashHeader(
                 job_name=f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
             )
             gnm_job = Job(
                 job_manager=config["job_manager"],
@@ -303,9 +303,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             )
             gnm_job.save_job(job_dir=os.path.join(project_dir,"jobs"))
             # VLM
-            vlm_job_header = PBSHeader(
+            vlm_job_header = BashHeader(
                 job_name=f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=16,
+                ncpus=config['ncpus'],
             )
             vlm_job = Job(
                 job_manager=config["job_manager"],
@@ -322,9 +322,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # CAT
             cat_job_header = PBSHeader(
                 job_name=f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
                 ngpus=0,
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -343,9 +343,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # VS2
             vs2_job_header = PBSHeader(
                 job_name=f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
                 ngpus=0,
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -364,9 +364,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # GNM
             gnm_job_header = PBSHeader(
                 job_name=f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
                 ngpus=0,
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -385,9 +385,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # VLM
             vlm_job_header = PBSHeader(
                 job_name=f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config['pbs']['ncpus'],
+                ncpus=config['ncpus'],
                 ngpus=config['pbs']['ngpus'],
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="12:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -408,9 +408,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # CAT
             cat_job_header = GadiHeader(
                 job_name=f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
                 ngpus=0,
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"CAT_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -433,9 +433,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # VS2
             vs2_job_header = GadiHeader(
                 job_name=f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
                 ngpus=0,
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VS2_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -458,9 +458,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # GNM
             gnm_job_header = GadiHeader(
                 job_name=f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config["pbs"]["ncpus"],
+                ncpus=config['ncpus'],
                 ngpus=0,
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="48:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"GNM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),
@@ -483,9 +483,9 @@ def generate_jobs(project_dir: str=os.getcwd(), batch_size=10, config: dict={}):
             # VLM
             vlm_job_header = GadiHeader(
                 job_name=f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}",
-                ncpus=config['pbs']['ncpus'],
+                ncpus=config['ncpus'],
                 ngpus=config['pbs']['ngpus'],
-                mem=f"{int(config['pbs']['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
+                mem=f"{int(config['ncpus']*4)}GB" if config['pbs']['mem']=='' else config['pbs']['mem'],
                 walltime="12:00:00",
                 mail_addr=config["pbs"]["mail_addr"],
                 log_o=os.path.join(project_dir,"logs",f"VLM_{chunk.index.to_list()[0]+1}_{chunk.index.to_list()[-1]+1}.o"),

@@ -8,9 +8,9 @@ def init_project_config(path):
         "project_dir": project_dir,
         "name": project_name,
         "max_batch_size": 10,
+        "ncpus": 32,
         "job_manager": "pbs",
         "pbs": {
-            "ncpus": 32,
             "ngpus": 1,
             "mem": "128GB",
             "mail_addr": "",
@@ -20,7 +20,7 @@ def init_project_config(path):
             }
         },
         "bash": {
-            "ncpus": 32
+            "":""
         }
     }
     yaml = YAML()

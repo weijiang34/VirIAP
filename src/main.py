@@ -1,7 +1,6 @@
 import os
 import argparse
 from utils import create, config, job_management, gadi_job, check_completeness, post_process, mapping, classify
-import pandas as pd
 import shutil
 
 def main():
@@ -32,8 +31,10 @@ def main():
     subparser_check = subparsers.add_parser("check", help ="Check completeness status of all samples.")
 
     subparser_extract = subparsers.add_parser("extract", help="Extract putative contigs.")
-    subparser_extract.add_argument("-l", "--min_length", type=int, default=3000, help="Minimum length for putative contigs. default: 3000")
-    subparser_extract.add_argument("-c", "--num_tools", type=int, default=2, help="Minimum number of tools to confirm. default: 2")
+    subparser_extract.add_argument("-l", "--min_length", type=int, default=3000, help="The minimum length of the contig to be considered as putative. Default: 3000")
+    subparser_extract.add_argument("-c", "--num_tools", type=int, default=2, help="A contig must be classified as viral by at least this many tools to be considered putative. Default: 2.")
+    subparser_extract.add_argument('--trusted', type=str, default='cat', help="The trusted tool(s) to be used for classification, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: 'cat'.")
+    subparser_extract.add_argument('--skip', type=str, default=None, help="List of tools to skip in the results, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: None.")
 
     subparser_filter = subparsers.add_parser("decontam", help="Decontamination: filter out rRNAs from bac,euk,arc,mito.")
     # subparser_confirm = subparsers.add_parser("confirm", help="Output confirmed viral contigs.")
@@ -63,6 +64,9 @@ def main():
     args = parser.parse_args()
 
     project_dir = os.path.abspath(args.prj_dir)
+    config_path = os.path.join(project_dir,"config.yaml")
+    if os.path.isfile(config_path):
+        prj_config = config.read_project_config(config_path)
 
     # Whether to dryrun
     if args.dryrun==True:
@@ -76,56 +80,67 @@ def main():
         check_completeness.check_complete_multifile(prj_dir=project_dir)
 
     if args.modules=="search":
-        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.generate==True:
-            if args.max_batch_size==None: batch_size=proj_config["max_batch_size"]
+            if args.max_batch_size==None: batch_size=prj_config["max_batch_size"]
             else: batch_size=args.max_batch_size
-            job_management.generate_jobs(project_dir=project_dir, config=proj_config, batch_size=batch_size)
+            job_management.generate_jobs(project_dir=project_dir, config=prj_config, batch_size=batch_size)
         elif args.submit==True:
             print("Please submit the jobs manually, just to make sure all the resoures requiered are valid and proper.")
             # gadi_job.submit_jobs(project_dir)
 
     if args.modules=="check":
         check_completeness.check_complete_multifile(prj_dir=project_dir)
-    if args.modules in ["extract","decontam","confirm"]:
-        fileHeader_list = pd.read_csv(os.path.join(project_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
-        if args.modules=="extract":
-            post_process.extract_putative_contigs_multi_samples(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), min_len=args.min_length, num_tools=args.num_tools)
-        if args.modules=="decontam":
-            proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-            if proj_config["job_manager"] in ["pbs","gadi"]:
-                post_process.find_rRNAs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist(), threads=proj_config['pbs']["ncpus"]) # [fileHeader_list["completed"]==False]
-                post_process.extract_decontaminated_contigs_multi_files(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist())
+
+    if args.modules=="extract":
+        post_process.extract_putative_contigs_multi_samples(
+            prj_dir=project_dir, 
+            min_len=args.min_length, 
+            num_tools=args.num_tools,
+            trusted=args.trusted,
+            skip=args.skip,
+        )
+    if args.modules=="decontam":
+        post_process.find_rRNAs_multi_files(
+            prj_dir=project_dir, 
+            threads=prj_config["ncpus"]
+        )
+        post_process.extract_decontaminated_contigs_multi_files(prj_dir=project_dir)
+
     if args.modules=="merge":
-        fileHeader_list = pd.read_csv(os.path.join(project_dir,"completeness_status.csv"),sep=',',header=0,index_col=None)
-        post_process.merge_confirmed_contigs(prj_dir=project_dir, fileHeader_list=fileHeader_list.loc[:,"fileHeader"].tolist())
+        post_process.merge_confirmed_contigs(prj_dir=project_dir)
+
     if args.modules=="dedup":
         post_process.dedup(prj_dir=project_dir)
+
     if args.modules=="check_quality":
-        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
-        post_process.check_quality(prj_dir=project_dir, config=proj_config)
+        prj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        post_process.check_quality(prj_dir=project_dir, config=prj_config)
+
     if args.modules=="cluster":
-        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        prj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.no_checkv:
             shutil.copy(os.path.join(project_dir,"OVU","merged_decontaminated_contigs_dedup.fasta"), os.path.join(os.path.join(project_dir,"OVU","quality_filtered_viral_contigs.fasta")))
-        post_process.cluster(prj_dir=project_dir, config=proj_config)
+        post_process.cluster(prj_dir=project_dir, config=prj_config)
+
     if args.modules=="mapping":
-        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        prj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.indexing==True:
-            mapping.indexing(prj_dir=project_dir, config=proj_config, subject=args.subject)
+            mapping.indexing(prj_dir=project_dir, config=prj_config, subject=args.subject)
         if args.mapping==True:
-            mapping.mapping(prj_dir=project_dir, manifest=args.manifest, config=proj_config, subject=args.subject)
+            mapping.mapping(prj_dir=project_dir, manifest=args.manifest, config=prj_config, subject=args.subject)
         if args.count_matrix==True:
             mapping.count_matrix(prj_dir=project_dir, manifest=args.manifest, subject=args.subject)
+
     if args.modules=="classify":
         os.makedirs(os.path.join(project_dir,"Classification"), exist_ok=True)
-        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        prj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.generate_job==True:
-            classify.anno_vContact3(prj_dir=project_dir, config=proj_config)
+            classify.anno_vContact3(prj_dir=project_dir, config=prj_config)
         if args.merge_lineage==True:
             classify.summarise_OVUs(prj_dir=project_dir, include=args.include.split(','))
+            
     if args.modules=="utils":
-        proj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
+        prj_config = config.read_project_config(os.path.join(project_dir,"config.yaml"))
         if args.rank_level_abundance==True:
             classify.save_rank_level_relative_abundance_TPM(
                 OVU_info_path=os.path.join(project_dir,"OVU","OVU_info.csv"), 
