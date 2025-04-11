@@ -138,8 +138,10 @@ python path/to/viriap/src/main.py -p ./ check
 python path/to/viriap/src/main.py -p ./ extract
 ```
 Parameters for filtering:  
--l defallt: 3000, minimum length for putative contigs.  
--c default: 2, minimum number of tools to confirm a viral contig.  
+-l , defallt: 3000, minimum length for putative contigs.  
+-c , default: 2, minimum number of tools to confirm a viral contig.  
+--trusted , The trusted tool(s) to be used for classification, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: 'cat'.  
+--skip , List of tools to skip in the results, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: None.
 
 #### 2.5 Decontamination (remove rRNA)
 ```
