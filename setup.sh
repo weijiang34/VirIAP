@@ -67,7 +67,7 @@ install_tools() {
         git clone https://github.com/ChengPENG-wolf/ViraLM.git
         cd $WORKING_DIR/dependencies/ViraLM
         # create viralm environment
-        conda env create -f viralm.yaml --name viralm
+        conda env create -f viralm.yaml -n viralm
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: 'viralm' created."
         fi
