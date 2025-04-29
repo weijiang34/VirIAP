@@ -15,6 +15,7 @@ install_tools() {
         source $CONDA_PATH/bin/activate $MAIN_ENV_NAME
         conda activate $MAIN_ENV_NAME
         conda install -c bioconda -c conda-forge strobealign samtools prodigal --yes
+        conda install diamond==2.0.6
         conda install bioconda::barrnap bioconda::seqkit bioconda::subread bioconda::checkv==1.0.1 --yes
         if [ $? -eq 0 ]; then
             echo -e "\tEnv: '$MAIN_ENV_NAME' created."
