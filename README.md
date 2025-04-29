@@ -118,7 +118,7 @@ max_batch_size: 10
 #### 2.1 Generate virus identification jobs
 After successfuly configured your project, you are ready to generate jobs for identifying viruses:  
 ```
-python path/to/viriap/src/main.py -p ./ main.py search --generate
+python path/to/viriap/src/main.py -p ./ search --generate
 ```
 
 #### 2.2 Submit jobs (manually)
