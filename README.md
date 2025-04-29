@@ -109,6 +109,11 @@ pbs:
         -l storage: 'storage of your project'  
         -P project: 'your project code'  
 ```
+**For slurm or other users**, please specify (keep others unchanged):  
+```
+job_manager: bash 
+```
+And please **manually add** the job description lines to each of the job file generated.
 **(Optional)** You can also specify how many files to be included in a job, by specifying:  
 ```
 max_batch_size: 10
