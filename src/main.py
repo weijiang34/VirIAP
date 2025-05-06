@@ -33,7 +33,7 @@ def main():
     subparser_extract = subparsers.add_parser("extract", help="Extract putative contigs.")
     subparser_extract.add_argument("-l", "--min_length", type=int, default=3000, help="The minimum length of the contig to be considered as putative. Default: 3000")
     subparser_extract.add_argument("-c", "--num_tools", type=int, default=2, help="A contig must be classified as viral by at least this many tools to be considered putative. Default: 2.")
-    subparser_extract.add_argument('--trusted', type=str, default='cat', help="The trusted tool(s) to be used for classification, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: 'cat'.")
+    subparser_extract.add_argument('--trusted', type=str, default='cat', help="The trusted tool(s) to be used for classification, selected from {cat,vs2,gnm,vlm}, comma seperated. When trusted, the viruses contigs identified by these tools will be treated as putative, and will not need double confirmation with other tools. Default: 'cat'.")
     subparser_extract.add_argument('--skip', type=str, default=None, help="List of tools to skip in the results, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: None.")
 
     subparser_filter = subparsers.add_parser("decontam", help="Decontamination: filter out rRNAs from bac,euk,arc,mito.")

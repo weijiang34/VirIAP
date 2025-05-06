@@ -31,7 +31,7 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, fasta_path, min_
         Optional:
             min_len: int, the minimum length of the contig to be considered as putative. Default: 3000.
             num_tools: int, a contig must be classified as viral by at least this many tools to be considered putative. Default: 2.
-            trusted: str, the trusted tool(s) to be used for classification, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: 'cat'.
+            trusted: str, the trusted tool(s) to be used for classification, selected from {cat,vs2,gnm,vlm}, comma seperated. When trusted, the viruses contigs identified by these tools will be treated as putative, and will not need double confirmation with other tools. Default: 'cat'.
             skip: str, a comma-separated list of tools to skip in the results, selected from {cat,vs2,gnm,vlm}, comma seperated. Default: None.
     Returns:
         
@@ -93,7 +93,8 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, fasta_path, min_
         gnm_p["category"] = "Plasmids"
         gnm = pd.merge(gnm_v, gnm_p, 'outer')
         gnm.columns = ["gnm_" + x for x in gnm.columns.values.tolist()]
-        gnm = gnm.rename({"gnm_seq_name":"seq_name"}, axis=1)
+        # gnm = gnm.rename({"gnm_seq_name":"seq_name"}, axis=1)
+        gnm['seq_name'] = gnm['gnm_seq_name'].str.split('|', expand=True)[0]
         gnm = gnm.loc[:,["seq_name", "gnm_category"]].reset_index(drop=True)
         return gnm
     def process_vlm():
@@ -130,16 +131,19 @@ def extract_putative_contigs_single_sample(prj_dir, fileHeader, fasta_path, min_
         Filter putative contigs based on length, number of tools, and trusted tools.
         '''
         # select entries with length >= min_len
-        putative_min_len = all[all["length"]>=min_len].reset_index(drop=True).set_index(["seq_name","length"])
-        # select entries with v_count >= num_tools
-        putative_min_len["v_count"] = putative_min_len.apply(lambda x: x[x=='Viruses'].count(), axis=1)
-        putative_min_len = putative_min_len[(putative_min_len["v_count"]>=num_tools) & (putative_min_len["gnm_category"]!="Plasmids")].reset_index().astype({"length":int}).astype(str)
+        putative_min_len = all[all["length"]>=min_len].reset_index(drop=True)#.set_index(["seq_name","length"])
+        
         # select entries with trusted tools
         cols = all.columns[all.columns.str.contains("_category")].tolist()
         trusted_cols = [col for col in cols if col.startswith(tuple(trusted.split(',')))] if trusted is not None else []
-        putative_trusted = all[all[trusted_cols].eq("Viruses").any(axis=1)].reset_index(drop=True)
+        putative_trusted = putative_min_len[putative_min_len[trusted_cols].eq("Viruses").any(axis=1)].reset_index(drop=True)
+        # select entries with v_count >= num_tools
+        putative_min_vcount = putative_min_len.copy()
+        putative_min_vcount["v_count"] = putative_min_vcount.apply(lambda x: x[x=='Viruses'].count(), axis=1)
+        putative_min_vcount = putative_min_vcount[(putative_min_vcount["v_count"]>=num_tools) & (putative_min_vcount["gnm_category"]!="Plasmids")].reset_index().astype({"length":int}).astype(str)
+        
         # combine filtered and trusted as putative
-        putative = all.set_index('seq_name').loc[list(set(putative_min_len['seq_name'].tolist()) | set(putative_trusted['seq_name'].tolist())),:].reset_index()
+        putative = all.set_index('seq_name').loc[list(set(putative_min_vcount['seq_name'].tolist()) | set(putative_trusted['seq_name'].tolist())),:].reset_index()
         # save putative summary
         putative.to_csv(os.path.join(prj_dir,"out",fileHeader,"putative_summary.csv"), index=None)
         return putative
