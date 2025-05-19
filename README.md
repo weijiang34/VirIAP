@@ -165,7 +165,7 @@ python path/to/viriap/src/main.py -p ./ dedup
 
 #### 2.8 Quality check
 ```
-python path/to/viriap/src/main.py -p ./ checkv_quality
+python path/to/viriap/src/main.py -p ./ check_quality
 ```
 
 ### 3. OVU construction, abundance classification, and classification 
