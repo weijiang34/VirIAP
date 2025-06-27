@@ -217,7 +217,10 @@ def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
     OVU_info_path = os.path.join(prj_dir,"OVU","OVU_info.csv")
 
     '''decomment when release'''
-    # include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
+    if not os.path.exists(OVU_info_tmp_path):
+        include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
+    else:
+        print(f"OVU_info_tmp.csv already exists, skip generating it.")
     incldue_vContact3(OVU_info_tmp_path=OVU_info_tmp_path, reps_lineage_path=reps_lineage_path)
     reps_lineage = pd.read_csv(reps_lineage_path, header=0)
     tool_name_map = {"CAT":"CAT", "VCT":"vContact3", "GNM":"GeNomad"}
