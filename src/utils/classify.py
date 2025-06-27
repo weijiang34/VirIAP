@@ -216,7 +216,6 @@ def summarise_OVUs(prj_dir, include=["CAT", "VCT", "GNM"]):
     reps_lineage_path = os.path.join(prj_dir,"OVU","reps_lineage.csv")
     OVU_info_path = os.path.join(prj_dir,"OVU","OVU_info.csv")
 
-    '''decomment when release'''
     if not os.path.exists(OVU_info_tmp_path):
         include_CAT_genomad(filtered_clusters_path, OVU_info_tmp_path=OVU_info_tmp_path)
     else:
